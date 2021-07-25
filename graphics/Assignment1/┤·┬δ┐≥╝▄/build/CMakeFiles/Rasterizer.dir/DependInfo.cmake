@@ -4,9 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/data/graphics/Assignment1/┤·┬δ┐≥╝▄/Triangle.cpp" "/home/data/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles/Rasterizer.dir/Triangle.cpp.o"
-  "/home/data/graphics/Assignment1/┤·┬δ┐≥╝▄/main.cpp" "/home/data/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles/Rasterizer.dir/main.cpp.o"
-  "/home/data/graphics/Assignment1/┤·┬δ┐≥╝▄/rasterizer.cpp" "/home/data/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles/Rasterizer.dir/rasterizer.cpp.o"
+  "/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/Triangle.cpp" "/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles/Rasterizer.dir/Triangle.cpp.o"
+  "/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/main.cpp" "/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles/Rasterizer.dir/main.cpp.o"
+  "/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/rasterizer.cpp" "/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles/Rasterizer.dir/rasterizer.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

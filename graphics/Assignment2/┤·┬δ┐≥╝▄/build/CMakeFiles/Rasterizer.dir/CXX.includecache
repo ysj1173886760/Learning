@@ -6,51 +6,55 @@
 
 #IncludeRegexTransform: 
 
-/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/Triangle.cpp
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/Triangle.cpp
 Triangle.hpp
-/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/Triangle.hpp
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/Triangle.hpp
 algorithm
 -
 array
 -
-stdexcept
--
 
-/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/Triangle.hpp
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/Triangle.hpp
 eigen3/Eigen/Eigen
 -
 
-/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/main.cpp
-Triangle.hpp
-/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/Triangle.hpp
-rasterizer.hpp
-/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/rasterizer.hpp
-eigen3/Eigen/Eigen
--
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/global.hpp
+
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/main.cpp
 iostream
 -
 opencv2/opencv.hpp
 -
+rasterizer.hpp
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/rasterizer.hpp
+global.hpp
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/global.hpp
+Triangle.hpp
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/Triangle.hpp
 
-/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/rasterizer.cpp
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/rasterizer.cpp
 algorithm
 -
+vector
+-
 rasterizer.hpp
-/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/rasterizer.hpp
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/rasterizer.hpp
 opencv2/opencv.hpp
 -
 math.h
 -
-stdexcept
+iostream
 -
 
-/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/rasterizer.hpp
-Triangle.hpp
-/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/Triangle.hpp
-algorithm
--
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/rasterizer.hpp
 eigen3/Eigen/Eigen
 -
+algorithm
+-
+global.hpp
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/global.hpp
+Triangle.hpp
+/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/Triangle.hpp
 
 /usr/local/include/boost/assert.hpp
 boost/config.hpp

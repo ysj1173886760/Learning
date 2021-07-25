@@ -54,10 +54,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄
+CMAKE_SOURCE_DIR = /home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/build
+CMAKE_BINARY_DIR = /home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/build
 
 #=============================================================================
 # Target rules for target CMakeFiles/Rasterizer.dir
@@ -66,7 +66,7 @@ CMAKE_BINARY_DIR = /home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝�
 CMakeFiles/Rasterizer.dir/all:
 	$(MAKE) -f CMakeFiles/Rasterizer.dir/build.make CMakeFiles/Rasterizer.dir/depend
 	$(MAKE) -f CMakeFiles/Rasterizer.dir/build.make CMakeFiles/Rasterizer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles --progress-num=1,2,3,4 "Built target Rasterizer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/build/CMakeFiles --progress-num=1,2,3,4 "Built target Rasterizer"
 .PHONY : CMakeFiles/Rasterizer.dir/all
 
 # Include target in all.
@@ -76,9 +76,9 @@ all: CMakeFiles/Rasterizer.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/Rasterizer.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/build/CMakeFiles 4
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/Rasterizer.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/data/Learning/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/data/Learning/graphics/Assignment2/┤·┬δ┐≥╝▄/build/CMakeFiles 0
 .PHONY : CMakeFiles/Rasterizer.dir/rule
 
 # Convenience name for target.
