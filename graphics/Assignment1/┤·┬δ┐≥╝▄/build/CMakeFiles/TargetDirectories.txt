@@ -1,0 +1,3 @@
+/home/data/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles/rebuild_cache.dir
+/home/data/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles/edit_cache.dir
+/home/data/graphics/Assignment1/┤·┬δ┐≥╝▄/build/CMakeFiles/Rasterizer.dir
