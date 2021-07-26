@@ -131,23 +131,25 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
             for (int i = 0; i < 4; i++) {
                 float cx = x + offset[i].first;
                 float cy = y + offset[i].second;
-                if (insideTriangle(cx, cy, t.v))
-                    cnt++;
+                if (insideTriangle(cx, cy, t.v)) {
+                    auto[alpha, beta, gamma] = computeBarycentric2D(cx, cy, t.v);
+                    float w_reciprocal = 1.0/(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
+                    float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
+                    z_interpolated *= w_reciprocal;
+
+                    int dep_index = get_index(x, y) * 4 + i;
+                    if (z_interpolated < depth_buf[dep_index]) {
+                        depth_buf[dep_index] = z_interpolated;
+                        cnt++;
+                    }
+                }
             }
 
             if (!cnt)
                 continue;
-            
-            auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
-            float w_reciprocal = 1.0/(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
-            float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
-            z_interpolated *= w_reciprocal;
 
             int index = get_index(x, y);
-            if (z_interpolated < depth_buf[index]) {
-                depth_buf[index] = z_interpolated;
-                set_pixel(Vector3f(x, y, 0), t.getColor() * (float(cnt) / 4.0));
-            }
+            set_pixel(Vector3f(x, y, 0), t.getColor() * (float(cnt) / 4.0) + frame_buf[index] * (float(4 - cnt) / 4.0));
         }
     }
 }
@@ -182,7 +184,7 @@ void rst::rasterizer::clear(rst::Buffers buff)
 rst::rasterizer::rasterizer(int w, int h) : width(w), height(h)
 {
     frame_buf.resize(w * h);
-    depth_buf.resize(w * h);
+    depth_buf.resize(w * h * 4);
 }
 
 int rst::rasterizer::get_index(int x, int y)
