@@ -204,6 +204,8 @@ void rst::rasterizer::draw(std::vector<Triangle *> &TriangleList) {
             vec.z()/=vec.w();
         }
 
+        // should be exactly the same as view * model
+        // so what's the meaning of this point
         Eigen::Matrix4f inv_trans = (view * model).inverse().transpose();
         Eigen::Vector4f n[] = {
                 inv_trans * to_vec4(t->normal[0], 0.0f),
@@ -308,7 +310,10 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
                     Vector3f normal_interpolated = alpha * t.normal[0] + beta * t.normal[1] + gamma * t.normal[2];
                     normal_interpolated = normal_interpolated.normalized();
                     Vector2f tex_coor_interpolated = alpha * t.tex_coords[0] + beta * t.tex_coords[1] + gamma * t.tex_coords[2];
+                    Vector3f view_coor_interpolated = alpha * view_pos[0] + beta * view_pos[1] + gamma * view_pos[2];
+
                     fragment_shader_payload payload(color_interpolated, normal_interpolated, tex_coor_interpolated, texture ? &*texture : nullptr);
+                    payload.view_pos = view_coor_interpolated;
 
                     auto color = fragment_shader(payload);
                     set_pixel(Vector2i(x, y), color);
