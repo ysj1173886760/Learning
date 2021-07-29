@@ -280,6 +280,46 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
     // Use: Instead of passing the triangle's color directly to the frame buffer, pass the color to the shaders first to get the final color;
     // Use: auto pixel_color = fragment_shader(payload);
 
+    auto v = t.toVector4();
+    
+    // get the bounding box
+    float x1 = t.v[0].x(), y1 = t.v[0].y();
+    float x2 = x1, y2 = y1;
+    for (int i = 0; i < 3; i++) {
+        x1 = std::min(x1, t.v[i].x());
+        x2 = std::max(x2, t.v[i].x());
+        y1 = std::min(y1, t.v[i].y());
+        y2 = std::max(y2, t.v[i].y());
+    }
+
+    const std::vector<std::pair<float, float>> offset = {{0.25, 0.25}, {0.25, 0.75}, {0.75, 0.25}, {0.75, 0.75}};
+
+    for (int y = int(y1); y <= int(y2 + 1); y++) {
+        for (int x = int(x1); x <= int(x2 + 1); x++) {
+            int cnt = 0;
+            for (int i = 0; i < 4; i++) {
+                float cx = x + offset[i].first;
+                float cy = y + offset[i].second;
+                if (insideTriangle(cx, cy, t.v)) {
+                    auto[alpha, beta, gamma] = computeBarycentric2D(cx, cy, t.v);
+                    float w_reciprocal = 1.0/(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
+                    float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
+                    z_interpolated *= w_reciprocal;
+
+                    int dep_index = get_index(x, y) * 4 + i;
+                    if (z_interpolated < depth_buf[dep_index]) {
+                        depth_buf[dep_index] = z_interpolated;
+                        cnt++;
+                    }
+                }
+            }
+
+            if (!cnt)
+                continue;
+
+            set_pixel(Vector2i(x, y), Vector3f(255, 255, 255));
+        }
+    }
  
 }
 
@@ -313,7 +353,7 @@ void rst::rasterizer::clear(rst::Buffers buff)
 rst::rasterizer::rasterizer(int w, int h) : width(w), height(h)
 {
     frame_buf.resize(w * h);
-    depth_buf.resize(w * h);
+    depth_buf.resize(w * h * 4);
 
     texture = std::nullopt;
 }
