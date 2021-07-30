@@ -30,5 +30,28 @@ public:
         return Eigen::Vector3f(color[0], color[1], color[2]);
     }
 
+    Eigen::Vector3f getBilinerColor(float u, float v) {
+        auto u_img = u * width;
+        auto v_img = (1 - v) * height;
+
+        auto u_min = (int)floor(u_img);
+        auto u_max = std::min((int)ceil(u_img), width);
+        auto v_min = (int)floor(v_img);
+        auto v_max = std::min((int)ceil(v_img), height);
+
+        auto color1 = image_data.at<cv::Vec3b>(v_max, u_min);
+        auto color2 = image_data.at<cv::Vec3b>(v_max, u_max);
+        auto color3 = image_data.at<cv::Vec3b>(v_min, u_min);
+        auto color4 = image_data.at<cv::Vec3b>(v_min, u_max);
+
+        auto ratio_u = (u_img - u_min) / (u_max - u_min);
+        auto ratio_v = (v_img - v_min) / (v_max - v_min);
+        auto up = (1 - ratio_u) * color3 + ratio_u * color4;
+        auto down = (1 - ratio_u) * color1 + ratio_u * color2;
+        auto col = (1 - ratio_v) * up + ratio_v * down;
+
+        return Eigen::Vector3f(col[0], col[1], col[2]);
+    }
+
 };
 #endif //RASTERIZER_TEXTURE_H
