@@ -36,7 +36,10 @@ bool rayTriangleIntersect(const Vector3f& v0, const Vector3f& v1,
     u *= invDet;
     v *= invDet;
 
-    return true;
+    if (u > 0 && v > 0 && (1 - u - v) > 0 && tnear > 0)
+        return true;
+
+    return false;
 }
 
 class Triangle : public Object
