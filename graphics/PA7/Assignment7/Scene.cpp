@@ -73,6 +73,10 @@ Vector3f Scene::shade(const Intersection &isec, const Ray &ray) const {
     Material *m = isec.m;
     Vector3f normal = isec.normal;
 
+    // isec is on the light
+    if (m->hasEmission())
+        return m->getEmission();
+
     auto L_dir = Vector3f(0.0, 0.0, 0.0);
     auto L_indir = Vector3f(0.0, 0.0, 0.0);
 
