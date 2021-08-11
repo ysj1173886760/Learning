@@ -49,7 +49,7 @@ void Renderer::Render(const Scene& scene)
     std::vector<Vector3f> framebuffer(scene.width * scene.height);
     renderProgress = 0;
 
-    int spp = 16;
+    int spp = 1024;
     std::cout << "SPP: " << spp << "\n";
 
     // referring https://github.com/Quanwei1992/GAMES101/blob/master/07/Renderer.cpp
