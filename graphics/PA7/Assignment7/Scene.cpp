@@ -60,43 +60,49 @@ bool Scene::trace(
 // Implementation of Path Tracing
 Vector3f Scene::castRay(const Ray &ray, int depth) const
 {
-    if (depth > maxDepth)
-        return Vector3f(0.0, 0.0, 0.0);
+    Intersection isec = intersect(ray);
+    if (isec.happened)
+        return shade(isec, ray);
 
-    Intersection intec = intersect(ray);
-    Vector3f hitColor = this->backgroundColor;
-    Material *m = intec.m;
-    Vector3f normal = intec.normal;
+    return this->backgroundColor;
+}
 
-    if (intec.happened) {
-        Intersection pos;
-        float pdf;
-        auto L_dir = Vector3f(0.0, 0.0, 0.0);
-        auto L_indir = Vector3f(0.0, 0.0, 0.0);
-        sampleLight(pos, pdf);
+Vector3f Scene::shade(const Intersection &isec, const Ray &ray) const {
+    static const double eps = 5e-4;
 
-        auto ws = (pos.coords - intec.coords).normalized();
-        bool notBlocked = (intersect(Ray(intec.coords, ws)).coords - pos.coords).norm() < EPSILON;
-        auto dist = pow((pos.coords - intec.coords).norm(), 2);
+    Material *m = isec.m;
+    Vector3f normal = isec.normal;
 
-        if (notBlocked) {
-            L_dir = pos.emit * m->eval(ray.direction, ws, normal) * dotProduct(ws, normal) * dotProduct(-ws, pos.normal) / pdf / dist;
-        }
+    auto L_dir = Vector3f(0.0, 0.0, 0.0);
+    auto L_indir = Vector3f(0.0, 0.0, 0.0);
 
-        if (get_random_float() <= RussianRoulette) {
-            auto wi = m->sample(ray.direction, normal);
+    // direct light
+    Intersection pos;
+    float pdf;
+    sampleLight(pos, pdf);
 
-            Ray ray2(intec.coords, wi);
-            Intersection pos2 = intersect(ray2);
+    auto ws = (pos.coords - isec.coords).normalized();
+    bool notBlocked = (intersect(Ray(isec.coords, ws)).coords - pos.coords).norm() < eps;
+    auto dist = pow((pos.coords - isec.coords).norm(), 2);
 
-            if (pos2.happened) {
-                L_indir = castRay(ray2, depth + 1) * m->eval(ray.direction, wi, normal) * dotProduct(wi, normal) / m->pdf(ray.direction, wi, normal) / RussianRoulette;
-            }
-        }
-
-        hitColor = L_dir + L_indir;
+    if (notBlocked) {
+        double cos1 = std::max(0.0f, dotProduct(ws, normal));
+        double cos2 = std::max(0.0f, dotProduct(-ws, pos.normal));
+        L_dir = pos.emit * m->eval(ws, -ray.direction, normal) * cos1 * cos2 / pdf / dist;
     }
 
-    return hitColor;
-    // TO DO Implement Path Tracing Algorithm here
+    // indirect light
+    if (get_random_float() <= RussianRoulette) {
+        auto wi = m->sample(ray.direction, normal);
+
+        Ray ray2(isec.coords, wi);
+        Intersection pos2 = intersect(ray2);
+
+        if (pos2.happened && !pos2.m->hasEmission()) {
+            double cos1 = std::max(0.0f, dotProduct(wi, normal));
+            L_indir = shade(pos2, ray2) * m->eval(wi, -ray.direction, normal) * cos1 / m->pdf(wi, -ray.direction, normal) / RussianRoulette;
+        }
+    }
+
+    return L_dir + L_indir;
 }
