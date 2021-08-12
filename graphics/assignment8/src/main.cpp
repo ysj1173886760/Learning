@@ -20,7 +20,6 @@ void usage(const char *binaryName) {
 }
 
 int main(int argc, char **argv) {
-  std::cout << "here" << std::endl;
   AppConfig config;
   int opt;
 
