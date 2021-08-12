@@ -25,12 +25,12 @@ static void RenderThread(const Scene &scene, std::vector<Vector3f> &frameBuffer,
     for (uint32_t j = yStart; j < yEnd; ++j) {
         for (uint32_t i = 0; i < scene.width; ++i) {
             // generate primary ray direction
-            float x = (2 * (i + 0.5) / (float)scene.width - 1) *
-                      imageAspectRatio * scale;
-            float y = (1 - 2 * (j + 0.5) / (float)scene.height) * scale;
-
-            Vector3f dir = normalize(Vector3f(-x, y, 1));
             for (int k = 0; k < spp; k++){
+                float x = (2 * (i + get_random_float()) / (float)scene.width - 1) *
+                        imageAspectRatio * scale;
+                float y = (1 - 2 * (j + get_random_float()) / (float)scene.height) * scale;
+
+                Vector3f dir = normalize(Vector3f(-x, y, 1));
                 frameBuffer[j * scene.height + i] += scene.castRay(Ray(eye_pos, dir), 0) / spp;  
             }
         }
@@ -49,7 +49,7 @@ void Renderer::Render(const Scene& scene)
     std::vector<Vector3f> framebuffer(scene.width * scene.height);
     renderProgress = 0;
 
-    int spp = 1024;
+    int spp = 128;
     std::cout << "SPP: " << spp << "\n";
 
     // referring https://github.com/Quanwei1992/GAMES101/blob/master/07/Renderer.cpp
