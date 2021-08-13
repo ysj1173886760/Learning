@@ -68,7 +68,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 }
 
 Vector3f Scene::shade(const Intersection &isec, const Ray &ray) const {
-    static const double eps = 5e-4;
+    static const double eps = 0.001;
 
     Material *m = isec.m;
     Vector3f normal = isec.normal;
@@ -108,5 +108,5 @@ Vector3f Scene::shade(const Intersection &isec, const Ray &ray) const {
         }
     }
 
-    return L_dir + L_indir;
+    return Vector3f::Max(Vector3f::Min(L_dir + L_indir, Vector3f(1.0f)), Vector3f(0.0f));
 }

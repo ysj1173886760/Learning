@@ -10,7 +10,7 @@
 
 inline float deg2rad(const float& deg) { return deg * M_PI / 180.0; }
 
-const float EPSILON = 0.00001;
+const float EPSILON = 0.001;
 int renderProgress;
 std::mutex mutex;
 

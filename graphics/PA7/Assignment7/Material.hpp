@@ -85,6 +85,32 @@ private:
         return a.x * B + a.y * C + a.z * N;
     }
 
+
+    Vector3f importanceSampling(const Vector3f &wo, const Vector3f &normal) {
+        double r0 = get_random_float();
+        double r1 = get_random_float();
+        double a2 = roughness * roughness;
+        double theta = acos(sqrt((1 - r0) / ((a2 - 1) * r0 + 1)));
+        double phi = 2 * M_PI * r1;
+        
+        // double x = sin(theta) * cos(phi);
+        // double y = cos(theta);
+        // double z = sin(theta) * sin(phi);
+        double x = sin(theta) * cos(phi);
+        double y = sin(theta) * sin(phi);
+        double z = cos(theta);
+        Vector3f wm = Vector3f(x, y, z);
+        Vector3f wm_w = toWorld(wm, normal);
+        return reflect(wo, wm_w);
+    }
+
+    double importancePDF(const Vector3f &wo, const Vector3f &wi, const Vector3f &normal) {
+        Vector3f h = normalize(wo + wi);
+        double cosTheta = dotProduct(normal, h);
+        double D = distributionGGX(normal, h, roughness);
+        return (D * cosTheta) / (4.0f * dotProduct(wo, h));
+    }
+
 public:
     MaterialType m_type;
     //Vector3f m_color;
@@ -93,12 +119,12 @@ public:
     Vector3f albedo;
     Vector3f F0;
     float specularExponent;
-    float rought_ness;
+    float roughness;
     float metallic;
     //Texture tex;
 
     inline Material(MaterialType t=DIFFUSE, Vector3f e=Vector3f(0,0,0));
-    inline Material(MaterialType t, Vector3f e, float rought_ness, float metallic);
+    inline Material(MaterialType t, Vector3f e, float roughness, float metallic);
     inline MaterialType getType();
     //inline Vector3f getColor();
     inline Vector3f getColorAt(double u, double v);
@@ -120,10 +146,10 @@ Material::Material(MaterialType t, Vector3f e){
     m_emission = e;
 }
 
-Material::Material(MaterialType t, Vector3f e, float rought_ness, float metallic) {
+Material::Material(MaterialType t, Vector3f e, float roughness, float metallic) {
     m_type = t;
     m_emission = e;
-    this->rought_ness = rought_ness;
+    this->roughness = roughness;
     this->metallic = metallic;
     Vector3f base(0.04);
     F0 = lerp(base, albedo, metallic);
@@ -145,6 +171,9 @@ Vector3f Material::getColorAt(double u, double v) {
 Vector3f Material::sample(const Vector3f &wi, const Vector3f &N){
     switch(m_type){
         case MICROFACET:
+        {
+            return importanceSampling(wi, N);
+        }
         case DIFFUSE:
         {
             // uniform sample on the hemisphere
@@ -162,6 +191,9 @@ Vector3f Material::sample(const Vector3f &wi, const Vector3f &N){
 float Material::pdf(const Vector3f &wi, const Vector3f &wo, const Vector3f &N){
     switch(m_type){
         case MICROFACET:
+        {
+            return importancePDF(wo, wi, N);
+        }
         case DIFFUSE:
         {
             // uniform sample probability 1 / (2 * PI)
@@ -194,8 +226,8 @@ Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &
             double cos2 = std::max(dotProduct(N, wi), 0.0f);
             if (cos1 > 0.0f && cos2 > 0.0f) {
                 Vector3f h = (wi + wo).normalized();
-                double k = pow((rought_ness + 1.0f), 2) / 8.0f;
-                double distribute = distributionGGX(N, h, rought_ness);
+                double k = pow((roughness + 1.0f), 2) / 8.0f;
+                double distribute = distributionGGX(N, h, roughness);
                 double geometry = geometrySmith(N, wo, wi, k);
                 
                 Vector3f fresnel = fresnelSchlick(cos1, F0);

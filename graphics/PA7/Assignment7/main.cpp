@@ -37,13 +37,15 @@ int main(int argc, char** argv)
 
     MeshTriangle floor("../models/cornellbox/floor.obj", white_marble);
     MeshTriangle shortbox("../models/cornellbox/shortbox.obj", white_marble);
-    MeshTriangle tallbox("../models/cornellbox/tallbox.obj", silver);
+    MeshTriangle tallbox("../models/cornellbox/tallbox.obj", white_marble);
     MeshTriangle left("../models/cornellbox/left.obj", red_plastic);
     MeshTriangle right("../models/cornellbox/right.obj", green_plastic);
     MeshTriangle light_("../models/cornellbox/light.obj", light);
+    Sphere ball(Vector3f(138, 120, 334), 120, white_marble);
 
     scene.Add(&floor);
-    scene.Add(&shortbox);
+    // scene.Add(&shortbox);
+    scene.Add(&ball);
     scene.Add(&tallbox);
     scene.Add(&left);
     scene.Add(&right);

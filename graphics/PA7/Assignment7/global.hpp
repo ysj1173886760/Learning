@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <random>
+#include "RandomGenerator.hpp"
 
 #undef M_PI
 #define M_PI 3.141592653589793f
@@ -30,11 +31,8 @@ inline  bool solveQuadratic(const float &a, const float &b, const float &c, floa
 
 inline float get_random_float()
 {
-    static std::random_device dev;
-    static std::mt19937 rng(dev());
-    static std::uniform_real_distribution<float> dist(0.f, 1.f); // distribution in range [1, 6]
-
-    return dist(rng);
+    thread_local static RandomGenerator randomGenerator;
+    return randomGenerator.get_random_number();
 }
 
 inline void UpdateProgress(float progress)
