@@ -7,7 +7,7 @@
 
 #include "Vector.hpp"
 
-enum MaterialType { DIFFUSE};
+enum MaterialType { DIFFUSE, MICROFACET};
 
 class Material{
 private:
@@ -92,6 +92,7 @@ public:
     float ior;
     Vector3f Kd, Ks;
     float specularExponent;
+    float rought_ness;
     //Texture tex;
 
     inline Material(MaterialType t=DIFFUSE, Vector3f e=Vector3f(0,0,0));
@@ -131,6 +132,7 @@ Vector3f Material::getColorAt(double u, double v) {
 
 Vector3f Material::sample(const Vector3f &wi, const Vector3f &N){
     switch(m_type){
+        case MICROFACET:
         case DIFFUSE:
         {
             // uniform sample on the hemisphere
@@ -147,6 +149,7 @@ Vector3f Material::sample(const Vector3f &wi, const Vector3f &N){
 
 float Material::pdf(const Vector3f &wi, const Vector3f &wo, const Vector3f &N){
     switch(m_type){
+        case MICROFACET:
         case DIFFUSE:
         {
             // uniform sample probability 1 / (2 * PI)
@@ -168,6 +171,23 @@ Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &
             if (cosalpha > 0.0f) {
                 Vector3f diffuse = Kd / M_PI;
                 return diffuse;
+            }
+            else
+                return Vector3f(0.0f);
+            break;
+        }
+        case MICROFACET:
+        {
+            double cos1 = dotProduct(N, wo);
+            double cos2 = dotProduct(N, wi);
+            Vector3f h = (wi + wo).normalized();
+            double k = pow((rought_ness + 1.0f), 2) / 8.0f;
+            if (cos1 > 0.0f) {
+                Vector3f diffuse = Kd / M_PI;
+                double distribute = distributionGGX(N, h, rought_ness);
+                double geometry = geometrySmith(N, wo, wi, k);
+                Vector3f fresnel = fresnelSchlick(cos1, Vector3f(0.04));
+                return Kd / M_PI + fresnel * distribute * geometry / (4.0 * cos1 * cos2);
             }
             else
                 return Vector3f(0.0f);
