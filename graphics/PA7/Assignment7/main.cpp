@@ -20,31 +20,26 @@ int main(int argc, char** argv)
     light->albedo = Vector3f(0.65f);
     
     // https://github.com/UnderSilence/ComputerGraphicsLearning/blob/master/lectures/GAMES101/Assignment7/Assignment7/main.cpp
-    Material* red_plastic = new Material(MICROFACET, Vector3f(0), 0.8, 0);
-    red_plastic->albedo = Vector3f(1.0f, 0.05f, 0.04f);
-    Material* white_plastic = new Material(MICROFACET, Vector3f(0), 0.8, 0);
-    white_plastic->albedo = Vector3f(0.875f, 0.81f, 0.78f);
-    Material* white_marble = new Material(MICROFACET, Vector3f(0), 0.001, 0);
-    white_marble->albedo = Vector3f(0.875f, 0.83f, 0.82f);
-    Material* green_plastic = new Material(MICROFACET, Vector3f(0), 0.8, 0);
-    green_plastic->albedo = Vector3f(0.14f, 1.0f, 0.091f);
-    Material* copper = new Material(MICROFACET, Vector3f(0), 0.1, 1.0);
-    copper->albedo = Vector3f(0.95f, 0.64f, 0.54f);
-    Material* silver = new Material(MICROFACET, Vector3f(0), 0.01, 1.0);
-    silver->albedo = Vector3f(0.95f, 0.93f, 0.88f);
-    Material* gold = new Material(MICROFACET, Vector3f(0), 0.0001, 1.0);
-    gold->albedo = Vector3f(1.00f, 0.71f, 0.29f);
+    Material* red_plastic = new Material(MICROFACET, Vector3f(0), Vector3f(1.0f, 0.05f, 0.04f), 0.8, 0);
+    Material* white_plastic = new Material(MICROFACET, Vector3f(0), Vector3f(0.875f, 0.81f, 0.78f), 0.8, 0);
+    Material* white_marble = new Material(MICROFACET, Vector3f(0), Vector3f(0.875f, 0.83f, 0.82f), 0.001, 0);
+    Material* green_plastic = new Material(MICROFACET, Vector3f(0), Vector3f(0.14f, 1.0f, 0.091f), 0.8, 0);
+    Material* copper = new Material(MICROFACET, Vector3f(0), Vector3f(0.95f, 0.64f, 0.54f), 0.1, 1.0);
+    Material* silver = new Material(MICROFACET, Vector3f(0), Vector3f(0.95f, 0.93f, 0.88f), 0.01, 1.0);
+    Material* gold = new Material(MICROFACET, Vector3f(0), Vector3f(1.00f, 0.71f, 0.29f), 0.0001, 1.0);
 
     MeshTriangle floor("../models/cornellbox/floor.obj", white_marble);
     MeshTriangle shortbox("../models/cornellbox/shortbox.obj", white_marble);
-    MeshTriangle tallbox("../models/cornellbox/tallbox.obj", white_marble);
+    MeshTriangle tallbox("../models/cornellbox/tallbox.obj", silver);
     MeshTriangle left("../models/cornellbox/left.obj", red_plastic);
     MeshTriangle right("../models/cornellbox/right.obj", green_plastic);
     MeshTriangle light_("../models/cornellbox/light.obj", light);
-    Sphere ball(Vector3f(138, 120, 334), 120, white_marble);
+    MeshTriangle bunny("../models/bunny/bunny_big.obj", copper);
+    Sphere ball(Vector3f(138, 120, 334), 120, gold);
 
     scene.Add(&floor);
     // scene.Add(&shortbox);
+    scene.Add(&bunny);
     scene.Add(&ball);
     scene.Add(&tallbox);
     scene.Add(&left);

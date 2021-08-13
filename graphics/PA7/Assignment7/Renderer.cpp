@@ -10,7 +10,7 @@
 
 inline float deg2rad(const float& deg) { return deg * M_PI / 180.0; }
 
-const float EPSILON = 0.001;
+const float EPSILON = 0.00001;
 int renderProgress;
 std::mutex mutex;
 
@@ -33,6 +33,12 @@ static void RenderThread(const Scene &scene, std::vector<Vector3f> &frameBuffer,
                 Vector3f dir = normalize(Vector3f(-x, y, 1));
                 frameBuffer[j * scene.height + i] += scene.castRay(Ray(eye_pos, dir), 0) / spp;  
             }
+            // if (frameBuffer[j * scene.height + i].x > 1)
+            //     std::cout << frameBuffer[j * scene.height + i].x << std::endl;
+            // if (frameBuffer[j * scene.height + i].y > 1)
+            //     std::cout << frameBuffer[j * scene.height + i].y << std::endl;
+            // if (frameBuffer[j * scene.height + i].z > 1)
+            //     std::cout << frameBuffer[j * scene.height + i].z << std::endl;
         }
         mutex.lock();
         renderProgress++;

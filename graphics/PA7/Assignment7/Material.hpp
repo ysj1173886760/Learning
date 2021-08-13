@@ -124,7 +124,7 @@ public:
     //Texture tex;
 
     inline Material(MaterialType t=DIFFUSE, Vector3f e=Vector3f(0,0,0));
-    inline Material(MaterialType t, Vector3f e, float roughness, float metallic);
+    inline Material(MaterialType t, const Vector3f &e, const Vector3f &albedo, float roughness, float metallic);
     inline MaterialType getType();
     //inline Vector3f getColor();
     inline Vector3f getColorAt(double u, double v);
@@ -146,9 +146,10 @@ Material::Material(MaterialType t, Vector3f e){
     m_emission = e;
 }
 
-Material::Material(MaterialType t, Vector3f e, float roughness, float metallic) {
+Material::Material(MaterialType t, const Vector3f &e, const Vector3f &albedo, float roughness, float metallic) {
     m_type = t;
     m_emission = e;
+    this->albedo = albedo;
     this->roughness = roughness;
     this->metallic = metallic;
     Vector3f base(0.04);
