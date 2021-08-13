@@ -52,7 +52,7 @@ inline void UpdateProgress(float progress)
     std::cout.flush();
 };
 
-inline double distributionGGX(Vector3f normal, Vector3f h, double rough_ness) {
+inline double distributionGGX(const Vector3f &normal, const Vector3f &h, double rough_ness) {
     double a2 = rough_ness * rough_ness;
     double nDotH = std::max(dotProduct(normal, h), 0.0f);
     double nDotH2 = nDotH * nDotH;
@@ -67,7 +67,7 @@ inline double geometrySchlickGGX(double nDotV, double k) {
     return nDotV / denom;
 }
 
-inline double geometrySmith(Vector3f normal, Vector3f v, Vector3f l, double k) {
+inline double geometrySmith(const Vector3f &normal, const Vector3f &v, const Vector3f &l, double k) {
     double nDotV = std::max(dotProduct(normal, v), 0.0f);
     double nDotL = std::max(dotProduct(normal, l), 0.0f);
     double ggx1 = geometrySchlickGGX(nDotV, k);

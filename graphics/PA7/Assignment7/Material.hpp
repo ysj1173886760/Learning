@@ -91,6 +91,7 @@ public:
     Vector3f m_emission;
     float ior;
     Vector3f albedo;
+    Vector3f F0;
     float specularExponent;
     float rought_ness;
     float metallic;
@@ -124,6 +125,8 @@ Material::Material(MaterialType t, Vector3f e, float rought_ness, float metallic
     m_emission = e;
     this->rought_ness = rought_ness;
     this->metallic = metallic;
+    Vector3f base(0.04);
+    F0 = lerp(base, albedo, metallic);
 }
 
 MaterialType Material::getType(){return m_type;}
@@ -195,13 +198,11 @@ Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &
                 double distribute = distributionGGX(N, h, rought_ness);
                 double geometry = geometrySmith(N, wo, wi, k);
                 
-                Vector3f F0(0.04);
-                F0 = lerp(F0, albedo, metallic);
                 Vector3f fresnel = fresnelSchlick(cos1, F0);
                 Vector3f Ks = fresnel;
                 Vector3f Kd = (Vector3f(1.0f) - Ks) * (1.0f - metallic);
                 // return Kd * albedo / M_PI + fresnel * distribute * geometry / std::max((4.0f * cos1 * cos2), (double)0.0001f);
-                return Kd * albedo / M_PI + fresnel * distribute * geometry / (4.0f * cos1 * cos2);
+                return Kd * albedo / M_PI + Ks * distribute * geometry / (4.0f * cos1 * cos2);
             }
             else
                 return Vector3f(0.0f);
