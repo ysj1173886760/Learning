@@ -57,7 +57,7 @@ inline double distributionGGX(Vector3f normal, Vector3f h, double rough_ness) {
     double nDotH = std::max(dotProduct(normal, h), 0.0f);
     double nDotH2 = nDotH * nDotH;
 
-    double denom = nDotH2 * ((a2 - 1.0f) + 1.0f);
+    double denom = nDotH2 * (a2 - 1.0f) + 1.0f;
     denom = M_PI * denom * denom;
     return a2 / denom;
 }
@@ -76,6 +76,6 @@ inline double geometrySmith(Vector3f normal, Vector3f v, Vector3f l, double k) {
     return ggx1 * ggx2;
 }
 
-inline Vector3f fresnelSchlick(double cosTheta, Vector3f F0) {
-    return F0 + (Vector3f(1.0f, 1.0f, 1.0f) - F0) * pow(1.0 - cosTheta, 5.0);
+inline Vector3f fresnelSchlick(double cosTheta, const Vector3f &F0) {
+    return F0 + (Vector3f(1.0f) - F0) * pow(1.0 - cosTheta, 5.0);
 }

@@ -90,12 +90,14 @@ public:
     //Vector3f m_color;
     Vector3f m_emission;
     float ior;
-    Vector3f Kd, Ks;
+    Vector3f albedo;
     float specularExponent;
     float rought_ness;
+    float metallic;
     //Texture tex;
 
     inline Material(MaterialType t=DIFFUSE, Vector3f e=Vector3f(0,0,0));
+    inline Material(MaterialType t, Vector3f e, float rought_ness, float metallic);
     inline MaterialType getType();
     //inline Vector3f getColor();
     inline Vector3f getColorAt(double u, double v);
@@ -115,6 +117,13 @@ Material::Material(MaterialType t, Vector3f e){
     m_type = t;
     //m_color = c;
     m_emission = e;
+}
+
+Material::Material(MaterialType t, Vector3f e, float rought_ness, float metallic) {
+    m_type = t;
+    m_emission = e;
+    this->rought_ness = rought_ness;
+    this->metallic = metallic;
 }
 
 MaterialType Material::getType(){return m_type;}
@@ -169,7 +178,7 @@ Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &
             // calculate the contribution of diffuse   model
             float cosalpha = dotProduct(N, wo);
             if (cosalpha > 0.0f) {
-                Vector3f diffuse = Kd / M_PI;
+                Vector3f diffuse = albedo / M_PI;
                 return diffuse;
             }
             else
@@ -178,16 +187,21 @@ Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &
         }
         case MICROFACET:
         {
-            double cos1 = dotProduct(N, wo);
-            double cos2 = dotProduct(N, wi);
-            Vector3f h = (wi + wo).normalized();
-            double k = pow((rought_ness + 1.0f), 2) / 8.0f;
-            if (cos1 > 0.0f) {
-                Vector3f diffuse = Kd / M_PI;
+            double cos1 = std::max(dotProduct(N, wo), 0.0f);
+            double cos2 = std::max(dotProduct(N, wi), 0.0f);
+            if (cos1 > 0.0f && cos2 > 0.0f) {
+                Vector3f h = (wi + wo).normalized();
+                double k = pow((rought_ness + 1.0f), 2) / 8.0f;
                 double distribute = distributionGGX(N, h, rought_ness);
                 double geometry = geometrySmith(N, wo, wi, k);
-                Vector3f fresnel = fresnelSchlick(cos1, Vector3f(0.04));
-                return Kd / M_PI + fresnel * distribute * geometry / (4.0 * cos1 * cos2);
+                
+                Vector3f F0(0.04);
+                F0 = lerp(F0, albedo, metallic);
+                Vector3f fresnel = fresnelSchlick(cos1, F0);
+                Vector3f Ks = fresnel;
+                Vector3f Kd = (Vector3f(1.0f) - Ks) * (1.0f - metallic);
+                // return Kd * albedo / M_PI + fresnel * distribute * geometry / std::max((4.0f * cos1 * cos2), (double)0.0001f);
+                return Kd * albedo / M_PI + fresnel * distribute * geometry / (4.0f * cos1 * cos2);
             }
             else
                 return Vector3f(0.0f);
