@@ -14,7 +14,7 @@ int main(int argc, char** argv)
 {
 
     // Change the definition here to change resolution
-    Scene scene(784, 784);
+    Scene scene(1080, 1080);
 
     Material* light = new Material(MICROFACET, (8.0f * Vector3f(0.747f+0.058f, 0.747f+0.258f, 0.747f) + 15.6f * Vector3f(0.740f+0.287f,0.740f+0.160f,0.740f) + 18.4f *Vector3f(0.737f+0.642f,0.737f+0.159f,0.737f)));
     light->albedo = Vector3f(0.65f);
@@ -36,16 +36,16 @@ int main(int argc, char** argv)
     MeshTriangle right("../models/cornellbox/right.obj", green_plastic);
     MeshTriangle light_("../models/cornellbox/light.obj", light);
     MeshTriangle bunny("../models/bunny/bunny_big.obj", copper);
-    Sphere ball1(Vector3f(138, 120, 380), 120, silver);
+    Sphere ball1(Vector3f(138, 120, 380), 120, gold);
     Sphere ball2(Vector3f(400, 120, 212), 120, silver);
     Sphere ball3(Vector3f(250, 180, 100), 30, light);
 
     scene.Add(&floor);
     // scene.Add(&shortbox);
-    // scene.Add(&bunny);
+    scene.Add(&bunny);
     scene.Add(&ball1);
-    scene.Add(&ball2);
-    // scene.Add(&tallbox);
+    // scene.Add(&ball2);
+    scene.Add(&tallbox);
     scene.Add(&left);
     scene.Add(&right);
     scene.Add(&light_);

@@ -193,7 +193,7 @@ float Material::pdf(const Vector3f &wi, const Vector3f &wo, const Vector3f &N){
     switch(m_type){
         case MICROFACET:
         {
-            return importancePDF(wo, wi, N);
+            return std::max((double)0.0001f, importancePDF(wo, wi, N));
         }
         case DIFFUSE:
         {
@@ -234,8 +234,7 @@ Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &
                 Vector3f fresnel = fresnelSchlick(cos1, F0);
                 Vector3f Ks = fresnel;
                 Vector3f Kd = (Vector3f(1.0f) - Ks) * (1.0f - metallic);
-                // return Kd * albedo / M_PI + fresnel * distribute * geometry / std::max((4.0f * cos1 * cos2), (double)0.0001f);
-                return Kd * albedo / M_PI + Ks * distribute * geometry / (4.0f * cos1 * cos2);
+                return Kd * albedo / M_PI + Ks * distribute * geometry / std::max((double)0.0001f, (4.0f * cos1 * cos2));
             }
             else
                 return Vector3f(0.0f);

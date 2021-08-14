@@ -87,9 +87,9 @@ Vector3f Scene::shade(const Intersection &isec, const Ray &ray) const {
 
     auto ws = (pos.coords - isec.coords).normalized();
     bool notBlocked = (intersect(Ray(isec.coords, ws)).coords - pos.coords).norm() < eps;
-    auto dist = pow((pos.coords - isec.coords).norm(), 2);
 
     if (notBlocked) {
+        auto dist = pow((pos.coords - isec.coords).norm(), 2);
         double cos1 = std::max(0.0f, dotProduct(ws, normal));
         double cos2 = std::max(0.0f, dotProduct(-ws, pos.normal));
         L_dir = pos.emit * m->eval(ws, -ray.direction, normal) * cos1 * cos2 / pdf / dist;
@@ -104,7 +104,7 @@ Vector3f Scene::shade(const Intersection &isec, const Ray &ray) const {
 
         if (pos2.happened && !pos2.m->hasEmission()) {
             double cos1 = std::max(0.0f, dotProduct(wi, normal));
-            L_indir = shade(pos2, ray2) * m->eval(wi, -ray.direction, normal) * cos1 / m->pdf(wi, -ray.direction, normal) / RussianRoulette;
+            L_indir = shade(pos2, ray2) * m->eval(wi, -ray.direction, normal) * cos1 / std::max(m->pdf(wi, -ray.direction, normal), 0.0001f) / RussianRoulette;
         }
     }
 
