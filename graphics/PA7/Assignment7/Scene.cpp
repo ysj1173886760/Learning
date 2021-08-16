@@ -87,12 +87,17 @@ Vector3f Scene::shade(const Intersection &isec, const Ray &ray) const {
 
     auto ws = (pos.coords - isec.coords).normalized();
     bool notBlocked = (intersect(Ray(isec.coords, ws)).coords - pos.coords).norm() < eps;
+    bool hasDirectLight = false;
 
     if (notBlocked) {
         auto dist = pow((pos.coords - isec.coords).norm(), 2);
         double cos1 = std::max(0.0f, dotProduct(ws, normal));
         double cos2 = std::max(0.0f, dotProduct(-ws, pos.normal));
         L_dir = pos.emit * m->eval(ws, -ray.direction, normal) * cos1 * cos2 / pdf / dist;
+        
+        // due to sometimes we won't get the correct ray to reflect light in the specular surface.
+        // thus, we let the ray to choose it's own directon.
+        hasDirectLight = L_dir.norm() > 0.1; 
     }
 
     // indirect light
@@ -102,7 +107,7 @@ Vector3f Scene::shade(const Intersection &isec, const Ray &ray) const {
         Ray ray2(isec.coords, wi);
         Intersection pos2 = intersect(ray2);
 
-        if (pos2.happened && !pos2.m->hasEmission()) {
+        if (pos2.happened && (!hasDirectLight || !pos2.m->hasEmission())) {
             double cos1 = std::max(0.0f, dotProduct(wi, normal));
             L_indir = shade(pos2, ray2) * m->eval(wi, -ray.direction, normal) * cos1 / std::max(m->pdf(wi, -ray.direction, normal), 0.0001f) / RussianRoulette;
         }
