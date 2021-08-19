@@ -9,7 +9,7 @@ void Player::update(const sf::Time &deltaTime) {
     auto deltaX = mousePos.x - currentPos.x;
     auto deltaY = mousePos.y - currentPos.y;
 
-    auto angle = atan(deltaY / deltaX) / M_PI * 180;
+    auto angle = atan2(deltaY, deltaX) / M_PI * 180;
     _shape.setRotation(angle);
 }
 
