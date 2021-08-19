@@ -1,18 +1,15 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include "player.h"
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(1024, 768), "test sprite");
 
-    sf::Texture texture;
-    if (!(texture.loadFromFile("../assets/survivor-idle_rifle_0.png"))) {
-        std::cerr << "warning: can not load texture" << std::endl;
+    Player player(&window);
+    if (!player.loadTexture())
         return 0;
-    }
-    
-    sf::Vector2u textureSize = texture.getSize();
-    sf::RectangleShape rect(sf::Vector2f(textureSize.x / 2, textureSize.y / 2));
-    rect.setTexture(&texture);
+
+    sf::Clock clock;
 
     while(window.isOpen()) {
         sf::Event event;
@@ -21,8 +18,10 @@ int main() {
                 window.close();
         }
 
+        player.update(clock.restart());
+
         window.clear();
-        window.draw(rect);
+        window.draw(player);
         window.display();
     }
 

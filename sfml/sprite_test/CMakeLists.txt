@@ -5,7 +5,9 @@ project(${PROJECT_NAME})
 
 find_package(OpenGL)
 
-file(GLOB source_files "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/src/*.h")
+include_directories("${CMAKE_SOURCE_DIR}/include")
+
+file(GLOB source_files "${CMAKE_SOURCE_DIR}/src/*.cpp")
 set(SOURCES ${source_files})
 set(CMAKE_CXX_STANDARD 11)
 
