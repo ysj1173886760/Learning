@@ -12,7 +12,7 @@ public:
     Player &operator=(const Player &) = delete;
 
     void update(const sf::Time &deltaTime);
-    bool loadTexture();
+    bool setTexture(sf::Texture *texture);
 
 private:
     virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const override;

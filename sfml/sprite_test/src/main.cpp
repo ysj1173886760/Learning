@@ -1,12 +1,17 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
+
 #include "player.h"
+#include "resource_holder.h"
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(1024, 768), "test sprite");
 
+    ResourceHolder<sf::Texture, int> textureHolder;
+    textureHolder.load(1, "../assets/survivor-idle_rifle_0.png");
+
     Player player(&window);
-    if (!player.loadTexture())
+    if (!player.setTexture(textureHolder.get(1)))
         return 0;
 
     sf::Clock clock;

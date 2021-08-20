@@ -33,9 +33,9 @@ void Player::update(const sf::Time &deltaTime) {
     _shape.move(sf::Vector2f(velocity.x * norm * dt * _speed, velocity.y * norm * dt * _speed));
 }
 
-bool Player::loadTexture() {
-    if (texture.loadFromFile("../assets/survivor-idle_rifle_0.png")) {
-        _shape.setTexture(&texture);
+bool Player::setTexture(sf::Texture *texture) {
+    if (texture) {
+        _shape.setTexture(texture);
         return true;
     }
     return false;
