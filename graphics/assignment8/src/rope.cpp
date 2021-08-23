@@ -86,7 +86,8 @@ namespace CGL {
                 m->forces += gravity * m->mass;
                 auto acce = m->forces / m->mass;
 
-                m->position = temp_position + (temp_position - m->last_position) + acce * delta_t * delta_t;
+                float factor = 0.00005;
+                m->position = temp_position + (1 - factor) * (temp_position - m->last_position) + acce * delta_t * delta_t;
                 m->last_position = temp_position;
                 // TODO (Part 4): Add global Verlet damping
             }
