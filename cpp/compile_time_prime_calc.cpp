@@ -2,6 +2,9 @@
 #include <cstdio>
 
 constexpr bool isPrime(int x) {
+    if(x == 1)
+        return false;
+    
     for (int i = 2; i * i <= x; i++) {
         if (x % i == 0)
             return false;
@@ -15,26 +18,19 @@ struct integer_sequence {};
 template<size_t... Ints>
 using index_sequence = integer_sequence<size_t, Ints...>;
 
-template<bool cond, typename Then, typename Else>
-struct If;
+template<size_t N, size_t... Ints>
+struct prime_calc_helper;
 
-template<typename Then, typename Else>
-struct If<true, Then, Else> {
-    typedef Then type;
-};
-
-template<typename Then, typename Else>
-struct If<false, Then, Else> {
-    typedef Else type;
+template<size_t N, size_t... Ints>
+struct late {
+    using type = typename prime_calc_helper<N, Ints...>::type;
 };
 
 template<size_t N, size_t... Ints>
 struct prime_calc_helper {
-    typedef 
-        typename If<isPrime(N), 
-                    typename prime_calc_helper<N - 1, N, Ints...>::type,
-                    typename prime_calc_helper<N - 1, Ints...>::type>::type 
-        type;
+    using type = typename std::conditional<isPrime(N), 
+                                    late<N - 1, N, Ints...>,
+                                    late<N - 1, Ints...>>::type::type;
 };
 
 template<size_t... Ints>
@@ -57,9 +53,11 @@ constexpr prime_sequence_t<Ints...> get_prime_seq(index_sequence<Ints...>) {
     return prime_sequence_t<Ints...> ();
 }
 
-auto prime_seq = get_prime_seq(make_prime_sequence<5>());
+auto prime_seq = get_prime_seq(make_prime_sequence<100>());
 
 int main() {
-    std::cout << prime_seq.count[1];
+    for (const auto &x : prime_seq.count) {
+        std::cout << x << " ";
+    }
     return 0;
 }
