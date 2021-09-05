@@ -19,18 +19,10 @@ template<size_t... Ints>
 using index_sequence = integer_sequence<size_t, Ints...>;
 
 template<size_t N, size_t... Ints>
-struct prime_calc_helper;
-
-template<size_t N, size_t... Ints>
-struct late {
-    using type = typename prime_calc_helper<N, Ints...>::type;
-};
-
-template<size_t N, size_t... Ints>
 struct prime_calc_helper {
     using type = typename std::conditional<isPrime(N), 
-                                    late<N - 1, N, Ints...>,
-                                    late<N - 1, Ints...>>::type::type;
+                                    prime_calc_helper<N - 1, N, Ints...>,
+                                    prime_calc_helper<N - 1, Ints...>>::type::type;
 };
 
 template<size_t... Ints>
