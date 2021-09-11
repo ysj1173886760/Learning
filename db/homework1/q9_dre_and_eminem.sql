@@ -1,6 +1,8 @@
-with pair_list(id1, id2, cnt) as (
+with pair_list(id1, id2, name1, name2, cnt) as (
 select a1.artist as id1,
     a2.artist as id2,
+    a3.name as name1,
+    a4.name as name2,
     count(*) as cnt
 from
     artist_credit_name a1
@@ -27,15 +29,13 @@ from (
     select row_number() over (
         order by
             cnt desc,
-            a1.name,
-            a2.name
+            name1,
+            name2
         ) as rank,
-        a1.name as name1,
-        a2.name as name2,
+        name1,
+        name2,
         cnt
     from
         pair_list d
-        inner join artist a1 on d.id1 = a1.id
-        inner join artist a2 on d.id2 = a2.id
 )
 where name1 = 'Dr. Dre' and name2 = 'Eminem'
