@@ -16,6 +16,12 @@ scores=(
 res=0
 for i in $files
 do
+	if ! [ -s $i ]
+	then
+		echo "skipping $i"
+		continue
+	fi
+
 	echo "************************"
 	echo "testing $i"
 	SECONDS=0
@@ -26,7 +32,7 @@ do
 	if [ $return_val -eq 0 ] 
 	then
 		echo "$i passed!"
-		res=$res+${scores[$i]} 
+		(( res = $res + ${scores[$i]} ))
 	else
 		echo "$i failed"
 	fi
