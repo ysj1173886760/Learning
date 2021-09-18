@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/KHR/khrplatform.h
+stdint.h
+-
+inttypes.h
+-
+stdint.h
+-
+
+../include/glad/glad.h
+KHR/khrplatform.h
+-
+
+/home/sheep/Learning/graphics/LearnOpenGL/test.cpp
+glad/glad.h
+-
+GLFW/glfw3.h
+-
+iostream
+-
+
