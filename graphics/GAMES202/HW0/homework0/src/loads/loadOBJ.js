@@ -40,20 +40,20 @@ function loadOBJ(renderer, path, name) {
 							// MARK: You can change the myMaterial object to your own Material instance
 
 							let textureSample = 0;
-							let myMaterial;
-							if (colorMap != null) {
-								textureSample = 1;
-								myMaterial = new Material({
-									'uSampler': { type: 'texture', value: colorMap },
-									'uTextureSample': { type: '1i', value: textureSample },
-									'uKd': { type: '3fv', value: mat.color.toArray() }
-								},[],VertexShader, FragmentShader);
-							}else{
-								myMaterial = new Material({
-									'uTextureSample': { type: '1i', value: textureSample },
-									'uKd': { type: '3fv', value: mat.color.toArray() }
-								},[],VertexShader, FragmentShader);
-							}
+							let myMaterial = new PhongMaterial(mat.color.toArray(), colorMap, mat.specular.toArray(), renderer.lights[0].entity.mat.intensity);
+							// if (colorMap != null) {
+							// 	textureSample = 1;
+							// 	myMaterial = new Material({
+							// 		'uSampler': { type: 'texture', value: colorMap },
+							// 		'uTextureSample': { type: '1i', value: textureSample },
+							// 		'uKd': { type: '3fv', value: mat.color.toArray() }
+							// 	},[],VertexShader, FragmentShader);
+							// }else{
+							// 	myMaterial = new Material({
+							// 		'uTextureSample': { type: '1i', value: textureSample },
+							// 		'uKd': { type: '3fv', value: mat.color.toArray() }
+							// 	},[],VertexShader, FragmentShader);
+							// }
 							
 							let meshRender = new MeshRender(renderer.gl, mesh, myMaterial);
 							renderer.addMesh(meshRender);
