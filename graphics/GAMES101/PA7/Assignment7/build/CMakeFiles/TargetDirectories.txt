@@ -1,0 +1,3 @@
+/home/sheep/Learning/graphics/PA7/Assignment7/build/CMakeFiles/rebuild_cache.dir
+/home/sheep/Learning/graphics/PA7/Assignment7/build/CMakeFiles/edit_cache.dir
+/home/sheep/Learning/graphics/PA7/Assignment7/build/CMakeFiles/RayTracing.dir

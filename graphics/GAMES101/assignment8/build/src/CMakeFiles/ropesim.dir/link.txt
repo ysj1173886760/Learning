@@ -1,0 +1,1 @@
+/usr/bin/c++   -std=gnu++11 -m64 -O3 -fopenmp  -rdynamic CMakeFiles/ropesim.dir/rope.cpp.o CMakeFiles/ropesim.dir/application.cpp.o CMakeFiles/ropesim.dir/main.cpp.o  -o ../ropesim  ../CGL/src/libCGL.a ../CGL/deps/glew/libglew.a ../CGL/deps/glfw/src/libglfw3.a -lX11 -lpthread -lXrandr -lXinerama -lXi -lXxf86vm -lrt -lm -lXcursor -lGL -lGL -lGLU -lfreetype 

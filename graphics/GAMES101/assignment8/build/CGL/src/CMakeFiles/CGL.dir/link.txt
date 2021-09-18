@@ -1,0 +1,2 @@
+/usr/bin/ar qc libCGL.a  CMakeFiles/CGL.dir/vector2D.cpp.o CMakeFiles/CGL.dir/vector3D.cpp.o CMakeFiles/CGL.dir/vector4D.cpp.o CMakeFiles/CGL.dir/matrix3x3.cpp.o CMakeFiles/CGL.dir/matrix4x4.cpp.o CMakeFiles/CGL.dir/quaternion.cpp.o CMakeFiles/CGL.dir/complex.cpp.o CMakeFiles/CGL.dir/color.cpp.o CMakeFiles/CGL.dir/osdtext.cpp.o CMakeFiles/CGL.dir/osdfont.c.o CMakeFiles/CGL.dir/viewer.cpp.o CMakeFiles/CGL.dir/base64.cpp.o CMakeFiles/CGL.dir/tinyxml2.cpp.o
+/usr/bin/ranlib libCGL.a

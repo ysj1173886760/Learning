@@ -1,0 +1,1 @@
+/bin/x86_64-linux-gnu-g++-9     CMakeFiles/RayTracing.dir/main.cpp.o CMakeFiles/RayTracing.dir/Vector.cpp.o CMakeFiles/RayTracing.dir/Scene.cpp.o CMakeFiles/RayTracing.dir/BVH.cpp.o CMakeFiles/RayTracing.dir/Renderer.cpp.o  -o RayTracing  -lpthread 
