@@ -9,22 +9,22 @@ using index_sequence = integer_sequence<size_t, Ints...>;
 
 template<size_t N, size_t... Ints>
 struct index_sequence_helper {
-    typedef typename index_sequence_helper<N - 1, N - 1, Ints...>::type type;
+	typedef typename index_sequence_helper<N - 1, N - 1, Ints...>::type type;
 };
 
 template<size_t... Ints>
 struct index_sequence_helper<0, Ints...> {
-    typedef index_sequence<Ints...> type;
+	typedef index_sequence<Ints...> type;
 };
 
 template<size_t N>
 using make_index_sequence = typename index_sequence_helper<N>::type;
 
 constexpr int count_bits(unsigned char value) {
-    if (value == 0)
-        return 0;
-    else
-        return (value & 1) + count_bits(value >> 1);
+	if (value == 0)
+		return 0;
+	else
+		return (value & 1) + count_bits(value >> 1);
 }
 
 template<size_t... V>
