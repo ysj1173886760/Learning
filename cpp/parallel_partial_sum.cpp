@@ -3,7 +3,7 @@
 #include <chrono>
 #include <vector>
 
-const int maxx = 1e6;
+const int maxx = 1e8;
 std::vector<int> n;
 std::vector<int> res1;
 std::vector<int> res2;
@@ -25,9 +25,10 @@ void work() {
     int numThreads = 10;
     int rangePerThread = maxx / numThreads;
     std::vector<std::thread> workers;
+    workers.reserve(numThreads);
     for (int i = 0; i < numThreads; i++) {
         int start = i * rangePerThread;
-        int end = start + rangePerThread;
+        int end = (i + 1) * rangePerThread;
         workers.push_back(std::thread(job1, start, end));
     }
     for (auto &worker : workers) {
