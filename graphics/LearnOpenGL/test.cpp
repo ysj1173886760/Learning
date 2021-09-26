@@ -137,7 +137,9 @@ int main()
 
 
     // uncomment this call to draw in wireframe polygons.
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // use GL_FILL to set it back to default
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     // render loop
     // -----------
