@@ -73,7 +73,7 @@ inner_loop_start:
 
     mv a2, s2
     li a3, 1
-    mv a4, s4
+    mv a4, s5
     sw t0, 28(sp)
     sw t1, 32(sp)
 
