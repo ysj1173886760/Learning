@@ -11,9 +11,11 @@
 abs:
     # Prologue
 
-    # return 0
-    mv a0, zero
+    # if positive, return directly
+    bge a0, zero, res
+
+    sub a0, zero, a0
 
     # Epilogue
-
+res:
     ret
