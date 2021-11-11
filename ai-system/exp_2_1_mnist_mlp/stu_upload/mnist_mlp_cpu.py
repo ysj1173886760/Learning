@@ -125,6 +125,8 @@ class MNIST_MLP(object):
 
     def train(self):
         max_batch = self.train_data.shape[0] / self.batch_size
+        print('before training')
+        self.evaluate()
         print('Start training...')
         for idx_epoch in range(self.max_epoch):
             self.shuffle_data()
@@ -137,18 +139,21 @@ class MNIST_MLP(object):
                 self.update(self.lr)
                 if idx_batch % self.print_iter == 0:
                     print('Epoch %d, iter %d, loss: %.6f' % (idx_epoch, idx_batch, loss))
+            self.evaluate()
 
     def evaluate(self):
         pred_results = np.zeros([self.test_data.shape[0]])
+        total_time = 0
         for idx in range(self.test_data.shape[0]/self.batch_size):
             batch_images = self.test_data[idx*self.batch_size:(idx+1)*self.batch_size, :-1]
             start = time.time()
             prob = self.forward(batch_images)
             end = time.time()
-            print("inferencing time: %f"%(end-start))
+            total_time += (end - start)
             pred_labels = np.argmax(prob, axis=1)
             pred_results[idx*self.batch_size:(idx+1)*self.batch_size] = pred_labels
         accuracy = np.mean(pred_results == self.test_data[:,-1])
+        print("inferencing time: %f"% (total_time))
         print('Accuracy in test set: %f' % accuracy)
 
 def build_mnist_mlp(param_dir='weight.npy'):
