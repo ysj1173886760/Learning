@@ -120,7 +120,7 @@ class VGG19(object):
         self.input_image = np.reshape(self.input_image, [1]+list(self.input_image.shape))
         # input dim [N, channel, height, width]
         # TODO：调整图片维度顺序
-        self.input_image = np.rollaxis(self.input_image, 3, 1)
+        self.input_image = np.moveaxis(self.input_image, 3, 1)
 
     def forward(self):  # TODO：神经网络的前向传播
         print('Inferencing...')

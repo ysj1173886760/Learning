@@ -50,7 +50,7 @@ class ConvolutionalLayer(object):
         # print(col.shape, self.weight.reshape(-1, self.weight.shape[-1]).shape)
         output = np.matmul(col, self.weight.reshape(-1, self.weight.shape[-1])) + self.bias
         # print(output.shape)
-        self.output = np.rollaxis(output.reshape(input.shape[0], height_out, width_out, self.channel_out), 3, 1)
+        self.output = np.moveaxis(output.reshape(input.shape[0], height_out, width_out, self.channel_out), 3, 1)
         return self.output
 
     def load_param(self, weight, bias):  # 参数加载
@@ -98,7 +98,7 @@ class FlattenLayer(object):
         # matconvnet feature map dim: [N, height, width, channel]
         # ours feature map dim: [N, channel, height, width]
         # TODO：转换 input 维度顺序
-        self.input = np.rollaxis(input, 3, 1)
+        self.input = np.moveaxis(input, 1, 3)
         # print(self.output_shape)
         # print([self.input.shape[0]] + list(self.output_shape))
         self.output = self.input.reshape([self.input.shape[0]] + list(self.output_shape))
