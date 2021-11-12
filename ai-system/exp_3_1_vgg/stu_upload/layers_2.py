@@ -3,6 +3,7 @@ import numpy as np
 import struct
 import os
 import time
+import threading
 
 def show_matrix(mat, name):
     #print(name + str(mat.shape) + ' mean %f, std %f' % (mat.mean(), mat.std()))
@@ -11,6 +12,7 @@ def show_matrix(mat, name):
 def show_time(time, name):
     #print(name + str(time))
     pass
+
 
 class ConvolutionalLayer(object):
     def __init__(self, kernel_size, channel_in, channel_out, padding, stride):
@@ -24,6 +26,13 @@ class ConvolutionalLayer(object):
     def init_param(self, std=0.01):  # 参数初始化
         self.weight = np.random.normal(loc=0.0, scale=std, size=(self.channel_in, self.kernel_size, self.kernel_size, self.channel_out))
         self.bias = np.zeros([self.channel_out])
+
+    def job(self, x, y, width, batch):
+        cur = x * width + y
+        bias_x = x * self.stride
+        bias_y = y * self.stride
+        self.col[:, cur, :] = self.input_pad[:, :, bias_x: bias_x + self.kernel_size, bias_y: bias_y + self.kernel_size].reshape(batch, -1)
+
     def forward(self, input):  # 前向传播的计算
         start_time = time.time()
         self.input = input # [N, C, H, W]
@@ -37,18 +46,22 @@ class ConvolutionalLayer(object):
         mat_w = self.kernel_size * self.kernel_size * self.channel_in
         mat_h = height_out * width_out
 
-        col = np.empty((input.shape[0], mat_h, mat_w))
-        for idxn in range(self.input.shape[0]):
-            cur = 0
-            for x in range(height_out):
-                for y in range(width_out):
-                    bias_x = x * self.stride
-                    bias_y = y * self.stride
-                    col[idxn, cur, :] = self.input_pad[idxn, :, bias_x: bias_x + self.kernel_size, bias_y: bias_y + self.kernel_size].flatten()
-                    cur = cur + 1
+        self.col = np.empty((input.shape[0], mat_h, mat_w))
+        cur = 0
+        workers = []
+        for x in range(height_out):
+            for y in range(width_out):
+                bias_x = x * self.stride
+                bias_y = y * self.stride
+                self.col[:, cur, :] = self.input_pad[:, :, bias_x: bias_x + self.kernel_size, bias_y: bias_y + self.kernel_size].reshape(input.shape[0], -1)
+                cur = cur + 1
+                # workers.append(threading.Thread(target = self.job, args = (x, y, width_out, input.shape[0])))
+                # workers[-1].start()
 
+        # for worker in workers:
+        #     worker.join()
         # print(col.shape, self.weight.reshape(-1, self.weight.shape[-1]).shape)
-        output = np.matmul(col, self.weight.reshape(-1, self.weight.shape[-1])) + self.bias
+        output = np.matmul(self.col, self.weight.reshape(-1, self.weight.shape[-1])) + self.bias
         # print(output.shape)
         self.output = np.moveaxis(output.reshape(input.shape[0], height_out, width_out, self.channel_out), 3, 1)
         return self.output
@@ -74,15 +87,13 @@ class MaxPoolingLayer(object):
         mat_h = height_out * width_out
 
         col = np.empty((input.shape[0], self.input.shape[1], mat_h, mat_w))
-        for idxn in range(self.input.shape[0]):
-            for channel in range(self.input.shape[1]):
-                cur = 0
-                for x in range(height_out):
-                    for y in range(width_out):
-                        bias_x = x * self.stride
-                        bias_y = y * self.stride
-                        col[idxn, channel, cur, :] = self.input[idxn, channel, bias_x: bias_x + self.kernel_size, bias_y: bias_y + self.kernel_size].flatten()
-                        cur = cur + 1
+        cur = 0
+        for x in range(height_out):
+            for y in range(width_out):
+                bias_x = x * self.stride
+                bias_y = y * self.stride
+                col[:, :, cur, :] = self.input[:, :, bias_x: bias_x + self.kernel_size, bias_y: bias_y + self.kernel_size].reshape(input.shape[0], input.shape[1], -1)
+                cur = cur + 1
 
         self.output = col.max(axis=3).reshape(input.shape[0], input.shape[1], height_out, width_out)
         return self.output
