@@ -24,7 +24,7 @@ def test_speed_up():
     test_filter = np.random.rand(256, 3, 3, 256)
     test_bias = np.random.rand(256)
 
-    conv = ConvolutionalLayer(3, 256, 256, 1, 1)
+    conv = ConvolutionalLayer(3, 256, 256, 1, 1, 1)
     conv.init_param()
     conv.load_param(test_filter, test_bias)
     stamp = time.time()
@@ -51,6 +51,7 @@ def test_speed_up():
     speedup_conv_forward_mse = computeMse(conv_forward_result.flatten(), speedup_conv_forward_result.flatten())
     speedup_conv_backward_mse = computeMse(conv_backward_result.flatten(), speedup_conv_backward_result.flatten())
     print(speedup_conv_backward_mse, speedup_conv_forward_mse)
+    print(speedup_conv_forward_mse, speedup_conv_backward_mse)
     if speedup_conv_forward_mse < 0.003 and speedup_conv_backward_mse < 0.003:
         print('SPEEDUP CONV TEST PASS.')
     else:
