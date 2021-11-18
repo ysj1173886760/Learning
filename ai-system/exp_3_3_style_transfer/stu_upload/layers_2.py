@@ -127,7 +127,6 @@ class ConvolutionalLayer(object):
         mat_w = self.kernel_size * self.kernel_size * self.channel_in
         mat_h = height_out * width_out
 
-        tmp_time = time.time()
         self.col = np.empty((input.shape[0], mat_h, mat_w))
         cur = 0
         for x in range(height_out):
