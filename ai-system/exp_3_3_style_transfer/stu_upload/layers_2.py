@@ -236,7 +236,6 @@ class MaxPoolingLayer(object):
             self.backward = self.backward_speedup
         print('\tMax pooling layer with kernel size %d, stride %d.' % (self.kernel_size, self.stride))
     def forward_raw(self, input):
-        start_time = time.time()
         self.input = input # [N, C, H, W]
         height_out = (self.input.shape[2] - self.kernel_size) / self.stride + 1
         width_out = (self.input.shape[3] - self.kernel_size) / self.stride + 1
@@ -249,13 +248,10 @@ class MaxPoolingLayer(object):
                         bias_x = idxh * self.stride
                         bias_y = idxw * self.stride
                         self.output[idxn, idxc, idxh, idxw] = np.max(self.input[idxn, idxc, bias_x: bias_x + self.kernel_size, bias_y: bias_y + self.kernel_size])
-                        curren_max_index = np.argmax(self.input[idxn, idxc, idxh*self.stride:idxh*self.stride+self.kernel_size, idxw*self.stride:idxw*self.stride+self.kernel_size])
-                        curren_max_index = np.unravel_index(curren_max_index, [self.kernel_size, self.kernel_size])
         return self.output
 
     def forward_speedup(self, input):
         # TODO: 改进forward函数，使得计算加速
-        start_time = time.time()
         self.input = input # [N, C, H, W]
         height_out = (self.input.shape[2] - self.kernel_size) / self.stride + 1
         width_out = (self.input.shape[3] - self.kernel_size) / self.stride + 1

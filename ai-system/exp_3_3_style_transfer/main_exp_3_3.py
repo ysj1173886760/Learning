@@ -18,13 +18,13 @@ def computeMse(data1,data2):
     
     return sum(squared_error) / len(squared_error)
 
-def test_speed_up():
+def test_conv_speed_up():
     test_data = np.random.rand(1, 256, 24, 40)
     test_dloss = np.random.rand(1, 256, 24, 40)
     test_filter = np.random.rand(256, 3, 3, 256)
     test_bias = np.random.rand(256)
 
-    conv = ConvolutionalLayer(3, 256, 256, 1, 1, 1)
+    conv = ConvolutionalLayer(3, 256, 256, 1, 1, 0)
     conv.init_param()
     conv.load_param(test_filter, test_bias)
     stamp = time.time()
@@ -50,7 +50,6 @@ def test_speed_up():
 
     speedup_conv_forward_mse = computeMse(conv_forward_result.flatten(), speedup_conv_forward_result.flatten())
     speedup_conv_backward_mse = computeMse(conv_backward_result.flatten(), speedup_conv_backward_result.flatten())
-    print(speedup_conv_backward_mse, speedup_conv_forward_mse)
     print(speedup_conv_forward_mse, speedup_conv_backward_mse)
     if speedup_conv_forward_mse < 0.003 and speedup_conv_backward_mse < 0.003:
         print('SPEEDUP CONV TEST PASS.')
@@ -61,9 +60,46 @@ def test_speed_up():
     print('CONV FORWARD SPEEDUP RATIO: %f'%(conv_forward_time / speedup_conv_forward_time))
     print('CONV BACKWARD SPEEDUP RATIO: %f'%(conv_backward_time / speedup_conv_backward_time))
 
+def test_pool_speed_up():
+    test_data = np.random.rand(1, 256, 24, 40)
+    test_dloss = np.random.rand(1, 256, 12, 20)
+
+    pool_raw = MaxPoolingLayer(2, 2, 0)
+    stamp = time.time()
+    pool_forward_result = pool_raw.forward(test_data)
+    pool_forward_time = time.time()-stamp
+    print('pool forward raw time: %f ms'%(pool_forward_time*1000))
+    stamp = time.time()
+    pool_backward_result = pool_raw.backward(test_dloss)
+    pool_backward_time = time.time()-stamp
+    print('pool backward raw time: %f ms'%(pool_backward_time*1000))
+
+    speedup_pool = MaxPoolingLayer(2, 2, 1)
+    stamp = time.time()
+    speedup_pool_forward_result = speedup_pool.forward(test_data)
+    speedup_pool_forward_time = time.time()-stamp
+    print('pool forward speedup time: %f ms'%(speedup_pool_forward_time*1000))
+    stamp = time.time()
+    speedup_pool_backward_result = speedup_pool.backward(test_dloss)
+    speedup_pool_backward_time = time.time()-stamp
+    print('pool backward speedup time: %f ms'%(speedup_pool_backward_time*1000))
+
+    speedup_pool_forward_mse = computeMse(pool_forward_result.flatten(), speedup_pool_forward_result.flatten())
+    speedup_pool_backward_mse = computeMse(pool_backward_result.flatten(), speedup_pool_backward_result.flatten())
+    print(speedup_pool_forward_mse, speedup_pool_backward_mse)
+    if speedup_pool_forward_mse < 0.003 and speedup_pool_backward_mse < 0.003:
+        print('SPEEDUP POOL TEST PASS.')
+    else:
+        print('SPEEDUP POOL TEST FAILED.')
+        exit()
+
+    print('POOL FORWARD SPEEDUP RATIO: %f'%(pool_forward_time / speedup_pool_forward_time))
+    print('POOL BACKWARD SPEEDUP RATIO: %f'%(pool_backward_time / speedup_pool_backward_time))
+
 if __name__ == '__main__':
     np.random.seed(1234)
-    test_speed_up()
+    test_conv_speed_up()
+    test_pool_speed_up()
     print('-------------------------')
     CONTENT_LOSS_LAYERS = ['relu4_2']
     STYLE_LOSS_LAYERS = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
