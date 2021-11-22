@@ -4,6 +4,7 @@ import numpy as np
 import struct
 import os
 import scipy.io
+import scipy.misc
 import time
 
 def computeMse(data1,data2):
@@ -23,10 +24,11 @@ def forward(vgg):
     current = vgg.input_image
     pool5 = np.array([])
     for idx in range(len(vgg.param_layer_name)):
-        tmp_time = time.time()
         print('Inferencing layer: ' + vgg.param_layer_name[idx])
         current = vgg.layers[vgg.param_layer_name[idx]].forward(current)
-        print('Interence time: %f' % (time.time() - tmp_time))
+        if (len(current.shape) == 4):
+            for idxc in range(current.shape[1]):
+                scipy.misc.imsave('./pic/layer{}channel{}.jpg'.format(idx, idxc), current[0, idxc, :, :])
         if 'pool5' in vgg.param_layer_name[idx]:
             pool5 = current
     print('Inference time: %f' % (time.time()-start_time))
