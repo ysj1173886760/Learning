@@ -20,7 +20,8 @@ def net(image, type=0):
 
     #TODO：最后一个卷积层的输出再经过 tanh 函数处理，最后的输出张量 preds 像素值需限定在 [0,255] 范围内
     # [-1, 1] -> [0, 2] -> [0, 255]
-    preds = tf.nn.tanh(conv4) * 150 * (255./2)
+    # preds = tf.nn.tanh(conv4) * 150 * (255./2)
+    preds = (tf.nn.tanh(conv4) + 1) * (255. / 2.)
     return preds
 
 def _conv_layer(net, num_filters, filter_size, strides, relu=True, type=0):

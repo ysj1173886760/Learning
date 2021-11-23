@@ -58,7 +58,7 @@ def loss_function(net, content_features, style_features, content_weight, style_w
 def optimize(content_targets, style_target, content_weight, style_weight,
                  tv_weight, vgg_path, epochs=2, print_iterations=1000,
                  batch_size=4, save_path='saver/fns.ckpt', slow=False,
-                 learning_rate=1e-3, debug=False, type=0, save=True):
+                 learning_rate=1e-3, debug=False, type=0, save=True, load=False):
     # 实时风格迁移训练方法定义，content_targets 为内容图像, style_target 为风格图像, content_weight、style_weight 和 tv_weight 分别为
     # 特征重建损失、风格重建损失和全变分正则化项的权重，vgg_path 为保存 VGG19 网络参数的文件路径
     if slow:
@@ -124,7 +124,20 @@ def optimize(content_targets, style_target, content_weight, style_weight,
         train_step = tf.train.AdamOptimizer(learning_rate).minimize(loss)
 
         # TODO：初始化所有变量
-        sess.run(tf.global_variables_initializer())
+        checkpoint_dir = './ckp_temp/fns.ckpt'
+        if load:
+            print('loading checkpoint')
+            saver = tf.train.Saver()
+            if os.path.isdir(checkpoint_dir):
+                ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+                if ckpt and ckpt.model_checkpoint_path:
+                    saver.restore(sess, ckpt.model_checkpoint_path)
+                else:
+                    raise Exception("No checkpoint found...")
+            else:
+                saver.restore(sess, checkpoint_dir)
+        else:
+            sess.run(tf.global_variables_initializer())
 
         import random
         uid = random.randint(1, 100)
@@ -158,6 +171,18 @@ def optimize(content_targets, style_target, content_weight, style_weight,
                     is_print_iter = epoch % print_iterations == 0
                 is_last = epoch == epochs - 1 and iterations * batch_size >= num_examples
                 should_print = is_print_iter
+                if (iterations == 1 and epoch == 0):
+                    to_get = [style_loss, content_loss, tv_loss, loss, preds]
+                    test_feed_dict = {
+                        X_content:X_batch
+                    }
+
+                    tup = sess.run(to_get, feed_dict = test_feed_dict)
+                    _style_loss,_content_loss,_tv_loss,_loss,_preds = tup
+                    print('Epoch %d, Iteration: %d, Loss: %s' % (epoch, iterations, _loss))
+                    to_print = (_style_loss, _content_loss, _tv_loss)
+                    print('style: %s, content:%s, tv: %s' % to_print)
+
                 if should_print:
                     to_get = [style_loss, content_loss, tv_loss, loss, preds]
                     test_feed_dict = {
