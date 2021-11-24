@@ -36,6 +36,7 @@ def net(data_path, input_image):
         if kind == 'conv':
             # TODO：如果当前层为卷积层，则进行卷积计算，计算结果为 current
             kernels, bias = weights[i][0][0][0][0]
+            kernels = np.transpose(kernels, [1, 0, 2, 3])
             current = _conv_layer(current, kernels, bias.flatten())
         elif kind == 'relu':
             # TODO：如果当前层为 ReLU 层，则进行 ReLU 计算，计算结果为 current

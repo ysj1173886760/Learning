@@ -58,7 +58,7 @@ def loss_function(net, content_features, style_features, content_weight, style_w
 def optimize(content_targets, style_target, content_weight, style_weight,
                  tv_weight, vgg_path, epochs=2, print_iterations=1000,
                  batch_size=4, save_path='saver/fns.ckpt', slow=False,
-                 learning_rate=1e-3, debug=False, type=0, save=True, load=False):
+                 learning_rate=1e-3, debug=False, type=0, save=True, load=True):
     # 实时风格迁移训练方法定义，content_targets 为内容图像, style_target 为风格图像, content_weight、style_weight 和 tv_weight 分别为
     # 特征重建损失、风格重建损失和全变分正则化项的权重，vgg_path 为保存 VGG19 网络参数的文件路径
     if slow:
