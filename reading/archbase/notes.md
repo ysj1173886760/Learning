@@ -131,3 +131,16 @@ TLB中存储的内容包括虚拟地址、物理地址和保护位，可分别�
 ![20211208152001](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208152001.png)
 
 ![20211208154940](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208154940.png)
+
+![20211208180137](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208180137.png)
+
+*当时树莓派就是只用了主核，其他核直接死循环挂起。几个核同样的执行这段初始化指令
+
+![20211208180628](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208180628.png)
+
+内存映射的情况下，不走缓存
+
+![20211208191035](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208191035.png)
+
+![20211208191201](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208191201.png)
+
