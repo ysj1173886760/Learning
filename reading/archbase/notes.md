@@ -91,3 +91,43 @@ TLB中存储的内容包括虚拟地址、物理地址和保护位，可分别�
 普通MMU为CPU提供物理内存的虚拟化，IOMMU则为外设提供物理内存的虚拟化，让外设访问内存时可通过虚实地址转换
 
 *结构体对齐，其实只有一个原则，就是每个元素都认为内存是以他的大小来划分的。那么元素的地址就要和他自身的大小对齐。同时结构体的大小还要和结构体中最大的元素对齐，因为当结构体作为一个元素出现的时候，后面结构体中的成员也需要对齐，所以我们需要保证前面结构体本身就是对齐的。
+
+![20211208132704](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208132704.png)
+
+![20211208132714](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208132714.png)
+
+![20211208132741](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208132741.png)
+
+![20211208132823](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208132823.png)
+
+![20211208133208](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208133208.png)
+
+![20211208134314](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208134314.png)
+
+![20211208134541](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208134541.png)
+
+*IO控制设备应该就是南桥
+
+![20211208134930](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208134930.png)
+
+*集显为什么慢
+
+![20211208135251](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208135251.png)
+
+![20211208135623](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208135623.png)
+
+![20211208140925](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208140925.png)
+
+![20211208141056](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208141056.png)
+
+![20211208141310](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208141310.png)
+
+![20211208141438](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208141438.png)
+
+*Soc 树莓派这样的
+
+![20211208151134](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208151134.png)
+
+![20211208152001](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208152001.png)
+
+![20211208154940](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208154940.png)
