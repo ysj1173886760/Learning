@@ -144,3 +144,12 @@ TLB中存储的内容包括虚拟地址、物理地址和保护位，可分别�
 
 ![20211208191201](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211208191201.png)
 
+![20211209191319](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211209191319.png)
+
+*这个妙
+
+![20211209191441](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211209191441.png)
+
+*保证不会出现竞争
+
+![20211209194510](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211209194510.png)
