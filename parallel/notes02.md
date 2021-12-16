@@ -55,3 +55,13 @@ Matlab这个例子中也看出来，不能一味的去尝试多线程，因为�
 因为context switch应该已经很快了
 
 ![20211215192948](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20211215192948.png)
+
+第三节课中有对这个地方的补充
+
+HyperThreading，超线程就是超标量处理器跨越多个可用的线程寻找独立的指令
+
+不仅利用多线程隐藏了内存延迟，同时还增加了独立指令的个数，以满足超标量处理器的工作负载
+
+[拓展阅读](https://zhuanlan.zhihu.com/p/93159762)
+
+[拓展阅读](https://zhuanlan.zhihu.com/p/20833753)
