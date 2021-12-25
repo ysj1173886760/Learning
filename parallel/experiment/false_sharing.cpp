@@ -21,7 +21,7 @@ void worker1(int worker_id) {
 
 void worker2(int worker_id) {
     for (int i = 0; i < WORK_LOAD; i++) {
-        counter2[worker_id].counter;
+        counter2[worker_id].counter++;
     }
 }
 
