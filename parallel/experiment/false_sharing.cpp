@@ -4,7 +4,7 @@
 #include <vector>
 
 #define NUM_OF_THREADS 12
-#define WORK_LOAD 100000000
+#define WORK_LOAD 1000000000
 
 struct counter {
     int counter;
@@ -17,9 +17,9 @@ void worker(int *addr) {
     }
 }
 
+int counter1[NUM_OF_THREADS];
 void test1() {
     std::vector<std::thread> workers;
-    int counter1[NUM_OF_THREADS];
     for (int i = 0; i < NUM_OF_THREADS; i++) {
         workers.push_back(std::thread(worker, &(counter1[i])));
     }
@@ -27,11 +27,12 @@ void test1() {
     for (auto &x : workers) {
         x.join();
     }
+
 }
 
+counter counter2[NUM_OF_THREADS];
 void test2() {
     std::vector<std::thread> workers;
-    counter counter2[NUM_OF_THREADS];
     for (int i = 0; i < NUM_OF_THREADS; i++) {
         workers.push_back(std::thread(worker, &(counter2[i].counter)));
     }
@@ -39,6 +40,7 @@ void test2() {
     for (auto &x : workers) {
         x.join();
     }
+
 }
 
 int main() {
