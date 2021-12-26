@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #define NUM_OF_THREADS 12
-#define WORK_LOAD 1000000000
+#define WORK_LOAD 100000000
 
 int counter1[NUM_OF_THREADS];
 
@@ -54,32 +54,23 @@ void test2() {
 }
 
 int main() {
-    clock_t start = clock();
+    struct timespec end, start;
+    clock_gettime(CLOCK_MONOTONIC, &start);
     test1();
-    clock_t end = clock();
-    double time = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("test1 elapsed time %.2lfs\n", time);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    double elapsed = (end.tv_sec - start.tv_sec);
+    elapsed += (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+    printf("test1 elapsed time %.2fs\n", elapsed);
 
-    start = clock();
+    clock_gettime(CLOCK_MONOTONIC, &start);
     test2();
-    end = clock();
-    time = ((double)(end - start)) / CLOCKS_PER_SEC;
-    printf("test2 elapsed time %.2lfs\n", time);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    elapsed = (end.tv_sec - start.tv_sec);
+    elapsed += (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+    printf("test2 elapsed time %.2fs\n", elapsed);
+
     return 0;
 }
-
-// struct timespec t1, t2;
-// clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
-// test1();
-// clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t2);
-// double time = ((double)(t2.tv_sec - t1.tv_sec));
-// printf("test1 elapsed time %.2lfs\n", time);
-
-// clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
-// test2();
-// clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t2);
-// time = ((double)(t2.tv_sec - t1.tv_sec));
-// printf("test2 elapsed time %.2lfs\n", time);
 
 
 // clock_t start = clock();
