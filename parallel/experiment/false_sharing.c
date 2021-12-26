@@ -13,26 +13,17 @@ struct counter {
     char padding[60];
 } counter2[NUM_OF_THREADS];
 
-void *worker1(void *args) {
-    int worker_id = *((int *)args);
+void *worker(void *arg) {
+    int *addr = (int *)arg;
     for (int i = 0; i < WORK_LOAD; i++) {
-        counter1[worker_id]++;
-    }
-}
-
-void *worker2(void *args) {
-    int worker_id = *((int *)args);
-    for (int i = 0; i < WORK_LOAD; i++) {
-        counter2[worker_id].counter++;
+        (*addr)++;
     }
 }
 
 void test1() {
     pthread_t workers[NUM_OF_THREADS];
     for (int i = 0; i < NUM_OF_THREADS; i++) {
-        int *param = malloc(sizeof(int));
-        *param = i;
-        pthread_create(&workers[i], NULL, worker1, param);
+        pthread_create(&workers[i], NULL, worker, &(counter1[i]));
     }
 
     for (int i = 0; i < NUM_OF_THREADS; i++) {
@@ -43,9 +34,7 @@ void test1() {
 void test2() {
     pthread_t workers[NUM_OF_THREADS];
     for (int i = 0; i < NUM_OF_THREADS; i++) {
-        int *param = malloc(sizeof(int));
-        *param = i;
-        pthread_create(&workers[i], NULL, worker2, param);
+        pthread_create(&workers[i], NULL, worker, &(counter2[i].counter));
     }
 
     for (int i = 0; i < NUM_OF_THREADS; i++) {
