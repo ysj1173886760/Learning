@@ -8,12 +8,9 @@ impl Solution {
         let mut q: VecDeque<(usize, i32)> = VecDeque::new();
 
         for (idx, x) in arr.iter().enumerate() {
-            if !mp.contains_key(x) {
-                mp.insert(*x, vec![idx]);
-            } else {
-                mp.get_mut(x).unwrap().push(idx);
-            }
+            mp.entry(*x).or_default().push(idx);
         }
+        
         q.push_back((0, 0));
 
         while !q.is_empty() {
