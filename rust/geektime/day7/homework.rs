@@ -19,8 +19,7 @@ impl MyWriter<BufWriter<TcpStream>> {
     }
 }
 
-
 fn main() {
-    let mut writer = MyWriter::new("127.0.0.1:8080");
+    let mut writer = MyWriter::<BufWriter<TcpStream>>::new("127.0.0.1:8080");
     writer.write("hello world!");
 }
