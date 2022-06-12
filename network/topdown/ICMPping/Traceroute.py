@@ -96,5 +96,5 @@ def get_route(hostname):
 				print("error")			
 		finally:				
 			mySocket.close()		
-get_route("neub607.xyz")	
+get_route("www.baidu.com")	
 

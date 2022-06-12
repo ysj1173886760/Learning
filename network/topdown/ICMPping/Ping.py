@@ -46,7 +46,7 @@ def receiveOnePing(mySocket, ID, sequence, destAddr, timeout):
         # Fill in start
         header = recPacket[20: 28]
         type, code, checksum, packetID, sequence = struct.unpack("!bbHHh", header)
-        if type == 0 and packetID == ID:  # type should be 0
+        if type == 0 and code ==0 and packetID == ID:  # type should be 0
             byte_in_double = struct.calcsize("!d")
             timeSent = struct.unpack("!d", recPacket[28: 28 + byte_in_double])[0]
             delay = timeReceived - timeSent
@@ -57,8 +57,17 @@ def receiveOnePing(mySocket, ID, sequence, destAddr, timeout):
         timeLeft = timeLeft - howLongInSelect
         if timeLeft <= 0:
             return None
+        
+        # 20 ~ 28 -> header
+        # 28 ~ 28 + x -> time
+        # x <- struct.calcsize("!d")
+        # x <- 8
+        # 28 ~ 36 <- timeSend
 
-
+# network
+# 00 00 00 01
+# my computer
+# 01 00 00 00
 def sendOnePing(mySocket, ID, sequence, destAddr):
     # Header is type (8), code (8), checksum (16), id (16), sequence (16)
 
