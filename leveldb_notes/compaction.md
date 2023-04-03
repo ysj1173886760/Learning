@@ -41,13 +41,18 @@ Flush memtable的调用点为`CompactMemTable()`。有两个调用点，不过�
 2. 如果是trivial move。即level层文件只有一个，并且level + 1层没有overlapping。同时与level + 2的overlapping size小于一个阈值。就会直接把该SST下移一层。
 3. 执行Compaction。DoCompactionWork
    1. DBImpl里维护了所有的Snapshot。这里会取最老的snapshot的sequence number。
-   2. 在Compaction的过程中，还会不断check是否需要CompactMemTable。来防止前台停写。
-   3. 对于每个Key，都会尝试计算当前生成的SST与level + 2的重叠大小。如果过大则会直接生成SST，来减少写放大。
-   4. 然后会判断当前Key是否需要保留。
+   2. `VersionSet::MakeInputIterator`生成遍历SST的Iterator。
+      1. 对于L0来说，每一个需要进行Compaction的L0 file都会创建一个对应的iterator。对于其他Level来说，则只需要一个concatenating iterator。
+      2. TableCache返回的Iterator为TwoLevelIterator。里面有一个index iterator和data iterator。在Seek的时候会做两层的二分，在Next的时候会先移动data iterator，移动到头了再移动index iterator。
+      3. 对于其他层来说，也是返回一个TwoLevelIterator。不过这个Iterator的第一层是LevelFileNumIterator，用来遍历输入的SST。第二层则是上面说的TableCache的Iterator。也就是说这个其实是个三层的Iterator。
+      4. 最后合并所有的Iterator，生成一个MergeIterator。MergeIterator就是一个类似归并排序的过程。leveldb实现的也比较简单，每次FindSmall会直接遍历所有的Iterator。
+   3. 在Compaction的过程中，还会不断check是否需要CompactMemTable。来防止前台停写。
+   4. 对于每个Key，都会尝试计算当前生成的SST与level + 2的重叠大小。如果过大则会直接生成SST，来减少写放大。
+   5. 然后会判断当前Key是否需要保留。
       1. 如果上一个Key的sequence小于snapshot，则drop。因为smallest snapshot会看到上一个key。
       2. 如果当前key的类型为删除，并且当前key的sequence小于smallest snapshot，且后面没有文件可能含有该key。则drop。
-   5. 不drop的话，就把当前的key加入到builder中。当file size超过该level的max size的话，则生成SST。
-   6. 生成Compaction Results。这里会把被Compaction掉的文件删除，记录新生成的SST。然后Apply到Version中。
+   6. 不drop的话，就把当前的key加入到builder中。当file size超过该level的max size的话，则生成SST。
+   7. 生成Compaction Results。这里会把被Compaction掉的文件删除，记录新生成的SST。然后Apply到Version中。
 
 感觉一些边界条件想的不是很清楚。还有就是Compaction的时候会考虑level + 2的事情，感觉比较新鲜。
 
