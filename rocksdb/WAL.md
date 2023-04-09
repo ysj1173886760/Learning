@@ -24,5 +24,27 @@
 
 如果要记录已经Sync的WAL的话，会调用`ApplyWALToManifest`来把这个VersionEdit记录下来。
 
+## 写链路上的WAL
 
+上面看SyncWAL的时候遇到了几个问题，结合一些实现可以找到对应的答案。之所以会有SyncWAL这个接口是因为RocksDB提供一个配置叫need log sync，表示每次写WAL是否需要同步到盘上。在need log sync为false的时候，一般配合SyncWAL的调用使用。
+
+而之所以要区分Flush和Sync，是因为RocksDB也提供一个选项叫manual wal flush，默认是关闭的。在写入WAL的时候，如果打开了manual wal flush，就会放弃调用Flush，而是等待用户手动调用FlushWAL。
+
+在主链路的PreprocessWrite中，会和SyncWAL做类似的逻辑，即调用PrepareForSync，其目的注释中也有写，是为了防止并发的SyncWAL的调用。不过防止并发的Sync调用的目的目前还没太想明白，应该只是为了记录已经Sync的数据大小。
+
+然后Leader会调用WriteToWAL，里面会做MergeBatch，将本次Batch写入到LogWriter中，并调用Sync。
+
+在WAL写完后，同样有一个和SyncWAL类似的处理逻辑，就是调用MarkLogsSynced，这里会调用FinishSync，并且在配置打开的时候，会将Sync的日志信息记录到Manifest中。
+
+## SwitchWAL
+
+在PreprocessWrite的时候，如果目前log的长度超过了阈值，就会调用SwitchWAL。只有在CF的数量大于1的时候才会调用SwitchWAL。
+
+里面有个option叫atomic flush，说的是在没开WAL的时候，如果也希望多个CF的写入是原子的，就需要打开这个选项，和主链路无关先不细看。
+
+这里会尝试对若干个CF调用SwitchMemTable，选择CF的条件是CF的LogNumber小于oldest_alive_log（这里感觉是需要联动看的）。
+
+调用SwitchMemTable就会尝试打开一个新的LogWriter，并添加到上面提到的`std::deque<LogWriterNumber>`这个结构中。并且会对这些CF调用FlushRequested，表示需要Flush L0。
+
+在SwitchMemTable的时候，只有在最新的LogWriter中有新的写入的时候，才会做添加一个新的LogWriter。表示的是一个LogWriter不能记录同一个CF多个不同MemTable的写入。（同样理由还得再想想）
 
