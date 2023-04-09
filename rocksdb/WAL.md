@@ -48,3 +48,15 @@
 
 在SwitchMemTable的时候，只有在最新的LogWriter中有新的写入的时候，才会做添加一个新的LogWriter。表示的是一个LogWriter不能记录同一个CF多个不同MemTable的写入。（同样理由还得再想想）
 
+## CreateWAL
+
+CreateWAL实际上是在SwitchMemTable内部调用的，即在需要创建新的LogWriter的时候，就会调用CreateWAL。这里主要是看一下，除了SwitchWAL会调用SwitchMemTable，还有哪些地方会调用。
+
+在写入MemTable的时候，比如MemTable的Add，会调用UpdateFlushState，如果MemTable过大，会将flush_state_置为`FLUSH_REQUESTED`。
+
+在WriteBatch写入MemTable的时候，会调用CheckMemTableFull，如果当前MemTable是ShouldScheduleFlush，就会将flush_state_ CAS为`FLUSH_SCHEDULED`，并将当前的CF传给`flush_scheduler`
+
+在Preprocess的时候会判断，如果`flush_scheduler_`非空的话，就会调用`ScheduleFlushes`，里面则会Switch掉所有非空的MemTable。
+
+还有一种情况就是在Preprocess的时候，会判断`write_buffer_manager->ShouldFlush`，里面会判断memtable的内存占用是否过大，过大的话会调用`HandleWriteBufferManagerFlush`，同样是和`ScheduleFlushes`类似的逻辑，Switch掉所有非空的MemTable。
+
