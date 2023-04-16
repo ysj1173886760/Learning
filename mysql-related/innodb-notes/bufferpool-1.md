@@ -1,6 +1,6 @@
 # BufferPool
 
-内核月报这里有一篇[文章](http://mysql.taobao.org/monthly/2017/05/01/)可以参考一下
+内核月报这里有些文章(http://mysql.taobao.org/monthly/2017/05/01/)(http://mysql.taobao.org/monthly/2020/02/02/)可以参考一下
 
 有一些需要知道的点：
 
@@ -246,6 +246,8 @@ mem size的占用是总共page的数据占用，加上buf block的占用。
 
 这里的level应该是debug模式使用的，在mutex enter的地方hook一些函数，我们就可以跟踪到不按照顺序获取latch的位置，进而定位到死锁的代码。(虽然不能完全预防，但是可以在遇到死锁的时候快速定位问题)
 
+在哈希表初始化好之后，在`buf_pool_init`中会调用`btr_search_sys_create`，里面会分配Adaptive hash index的rw lock以及对应的哈希表。
+
 至此buffer pool的初始化就结束了。
 
 ## GetPage流程
@@ -254,3 +256,90 @@ mem size的占用是总共page的数据占用，加上buf block的占用。
 
 核心的函数为`buf_page_get_gen`
 
+```cpp
+/** This is the general function used to get access to a database page.
+@param[in]      page_id                 Page id
+@param[in]      page_size               Page size
+@param[in]      rw_latch                RW_S_LATCH, RW_X_LATCH, RW_NO_LATCH
+@param[in]      guess                     Guessed block or NULL
+@param[in]      mode                      Fetch mode.
+@param[in]      location          Location from where this method was called.
+@param[in]      mtr                         Mini-transaction
+@param[in]      dirty_with_no_latch     Mark page as dirty even if page is being
+                        pinned without any latch
+@return pointer to the block or NULL */
+buf_block_t *buf_page_get_gen(const page_id_t &page_id,
+                              const page_size_t &page_size, ulint rw_latch,
+                              buf_block_t *guess, Page_fetch mode,
+                              ut::Location location, mtr_t *mtr,
+                              bool dirty_with_no_latch = false);
+```
+
+传入的是PageId，其中PageId是由SpaceId和PageNumber组成的。有关Innodb的表空间后面会再写一篇文章，其核心目的是为了区分不同类型的Page的放置策略，比如LeafPage存到一起，InternalPage存到一起这样。
+
+```cpp
+if (mode == Page_fetch::NORMAL && !fsp_is_system_temporary(page_id.space())) {
+  Buf_fetch_normal fetch(page_id, page_size);
+
+  fetch.m_rw_latch = rw_latch;
+  fetch.m_guess = guess;
+  fetch.m_mode = mode;
+  fetch.m_file = location.filename;
+  fetch.m_line = location.line;
+  fetch.m_mtr = mtr;
+  fetch.m_dirty_with_no_latch = dirty_with_no_latch;
+
+  return (fetch.single_page());
+
+} else {
+  Buf_fetch_other fetch(page_id, page_size);
+
+  fetch.m_rw_latch = rw_latch;
+  fetch.m_guess = guess;
+  fetch.m_mode = mode;
+  fetch.m_file = location.filename;
+  fetch.m_line = location.line;
+  fetch.m_mtr = mtr;
+  fetch.m_dirty_with_no_latch = dirty_with_no_latch;
+
+  return (fetch.single_page());
+}
+```
+
+读取的时候有两种模式，分别是fetch_normal和fetch_other，这里先看fetch_normal
+
+调用链路如下：
+
+1. `Buf_fetch_normal::get()`
+2. `Buf_fetch<T>::lookup()`
+   1. 先上PageHash的锁，然后在`m_hash_lock`上读锁
+   2. 如果m_guess存在，就是上面函数传入的guess，其实是读取block的一个hint。如果存在hint的话，这里会判断一下这个hint的合法性，如果不合法的话，就会调用`buf_page_hash_get_low`，这里会读取PageHash并把对应的block返回。
+   3. 如果block为空的话，这里会释放刚才的读锁，然后返回nullptr，表示cache miss。
+   4. 否则的话就返回刚才读到的block。（其实这里还有一个`buf_pool_watch_is_sentinel`，这个等下再来看）
+3. 如果读到的block不是nullptr的话，调用`buf_block_fix`，增加当前page的refcnt防止他被换出。并且在增加refcnt之后才会释放锁表的读锁。
+4. 如果读到的block是空的话，就要调用`read_page()`，这里会进行IO。
+5. `buf_read_page`
+6. `buf_read_page_low`
+   1. 对于某些特殊空间的Page，这里会用同步的IO，即当前线程会同步等待。
+7. `buf_page_init_for_read`，这里会尝试释放一些空间预留给新的Page。
+8. `buf_LRU_get_free_block`。在注释中有写获取free block的策略。
+   1. 对于iteration 0来说。
+      1. 如果free list中有block，则获取成功
+      2. 如果`buf_pool->try_LRU_scan`设置了，就会扫描至多`src_LRU_scan_depth`个block来尝试找到一个非脏的block。
+      3. 从LRU的尾部找一个脏页刷入到磁盘中。
+   2. 对于iteration 1来说，不是扫描`src_LRU_scan_depth`个，而是扫描整个LRU。并且会无视`buf_pool->try_LRU_scan`这个标志。
+   3. 对于iteration 大于1来说，会在每次操作结束后睡10ms。
+9. 得到空的block之后:
+   1. 如果page是一个压缩页，这里会从buddy system中分配一个压缩页的数据区。
+   2. 然后上哈希表的写锁。以及LRU的锁。
+   3. 调用`buf_page_init`初始化当前的block，将io_fix设置为BUF_IO_READ。
+   4. 然后将当前的block加入到LRU中。如果是压缩页的话，这里还会将当前的block加入到unzip_LRU中。
+   5. 最后释放哈希表和LRU的锁。
+10. `fil_io`，执行真正的io，将Page读上来。
+11. `buf_page_io_complete`。这里做的事有：
+    1. 解压Page
+    2. 校验一些数据，比如Checksum等
+    3. 更新一下io fix的状态
+    4. 如果是Recover模式的话，这里还会将log record apply到Page上。（感觉在这里调用有点诡异）
+12. read page结束后，这里还会尝试进行一些随机读，用来提高局部性。而如果读取失败的话，这里会记录失败的次数并返回。如果本次`Buf_fetch`失败的次数超过了100次，就会认为这个数据损坏了，innodb会fatal掉。
+13. 然后会进入下一轮的循环，这里会再次尝试读取哈希表，读取当前的page。失败的话则会再次做IO。
