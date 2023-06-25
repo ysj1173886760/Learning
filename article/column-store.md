@@ -141,3 +141,51 @@ Vectorized Processing的好处：
 
 ![](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20230624222727.png)
 
+
+
+* Dictionary：Dictionary Encoding的思路就是通过一个映射（字典）来把值映射成一些紧凑的编码。Dictionary的粒度可以是整个Table，也可以是类似IBM BLINK那样的per-page dictionary。这种压缩方式可以把变长的string映射成定长的字段（当然要string有重复的时候才能用，否则还不如存offset）。通过Dictionary把column转化成定长的数组，我们就可以直接在编码后的数据上进行操作，这样就可以应用一些上面提到过的技术，比如SIMD，以及避免存储TupleID等。
+* Frame Of Reference：这个其实类似Delta Encoding，要求数据分布具有"value locality"，比如存储温度的时候，可以先存一个Base，然后后面存Delta，那么Delta所需要的存储空间就比较小。(我个人脑补这种差分数组的存储方式其实还可以支持高效的区间加减，但感觉用处不大)。
+* The Patching Technique：这个主要是和其他的压缩方法配合使用的，比如Dictionary Encoding，在数据的基数比较大的情况下其实效果不好，但数据分布大概率是幂律分布/正态分布（我不确定），所以只需要压缩哪些频率比较高的数据，对于频率比较低的数据，可以直接存原始值/或者offset之类的东西。
+
+上面大多提到的东西都是一句话带过，实际上文章内还有一些相关的引用，感兴趣的话可以去看看这些引用，或者直接去看15721 Database Compression这一节也行
+
+### Operating Directly on Compressed Data
+
+ 这里是让Executor直接操作压缩的数据，从而获得性能提升。比较直观的例子有：
+
+* 如果数据是通过RLE压缩的，那么在一些聚合操作，比如SUM上，就可以不用一个一个遍历数据，而是通过`value * run length`计算即可
+* 如果Dictionary Encoding是保序的，即如果`A < B, Encode(A) < Encode(B)`（这里不是很严谨哈）这种。那么在一些谓词的操作上，比如`select * from A where value > 100 & value < 200`就可以把这里的100和200转化成编码之后的值来进行比较。好处自然是可以利用SIMD以及编码紧凑这种特性来提高数据级并行度。
+
+文章中还提到了，说希望通过一层抽象来避免让Executor直接感知数据的压缩方法，这样可维护性太差。大概思路就是Executor操作Compression Block，然后Compression Block提供一些数据访问的方法，还有一些高级的元信息（比如GetSize）。这块我感觉说的比较抽象，而且不太确定这里的实现是否现在还有使用，所以这里就跳过了，之后参考一下duckdb是怎么做的。
+
+### Late Materialization
+
+这里的核心思路就是希望尽可能的推迟Tuple Reconstruction的时机，尽可能的通过一些轻量级的表示来存储中间结果，从而减少物化中间结果的开销。比如一个带谓词的Table Scan，因为我们并不是iterator model（无物化中间结果），所以还是需要输出一些内容到Vector/Block中的。那么这里我们肯定是希望存储TupleID/Offset之类的东西作为中间结果，而非Tuple本身。
+
+中间结果其实就是"list of positions"，他的表示有很多种，比如之前提到的MonetDB的BAT，就是column value + virtual id。取决于选择率，我们可以将中间结果表示为：
+
+* simple array
+* bit string
+* set of ranges
+
+这里他给出了一个例子表达Late Materialization的思路
+
+![](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20230625103801.png)
+
+后面这里还说了一些Late Materialization的优点和缺点，值得关注的有：
+
+* 对于使用RLE等压缩技术的数据，在tuple reconstruction的时候需要进行解压，从而丧失了直接操作压缩数据的优势，而Late Materialization可以推迟tuple reconstruction的时机，从而推迟解压时机
+* 在一些场景下，early materialization可能更有优势，比如谓词非常多的场景下，我们需要对很多的中间结果做intersection。以及上述例子中可以看到的，reconstruction需要涉及到对列数据的随机读取，性能不佳。解决的方法就是用类似PAX的思路，将中间结果存储成行列混合的形式，一个Block中存储有多个和本次query相关的列，从而减少tuple reconstruction开销。（其实这里我感觉也和持久化的data layout边界有点模糊，很具体的还得再去读读duckdb）
+
+
+
+### Joins
+
+### Group-by, Aggregation and Arithmetic Operations
+
+### Inserts/updates/deletes
+
+### Indexing, Adaptive Indexing and Database Cracking
+
+
+
