@@ -177,15 +177,57 @@ Vectorized Processing的好处：
 * 对于使用RLE等压缩技术的数据，在tuple reconstruction的时候需要进行解压，从而丧失了直接操作压缩数据的优势，而Late Materialization可以推迟tuple reconstruction的时机，从而推迟解压时机
 * 在一些场景下，early materialization可能更有优势，比如谓词非常多的场景下，我们需要对很多的中间结果做intersection。以及上述例子中可以看到的，reconstruction需要涉及到对列数据的随机读取，性能不佳。解决的方法就是用类似PAX的思路，将中间结果存储成行列混合的形式，一个Block中存储有多个和本次query相关的列，从而减少tuple reconstruction开销。（其实这里我感觉也和持久化的data layout边界有点模糊，很具体的还得再去读读duckdb）
 
-
-
 ### Joins
+
+这里没有介绍join算法，而是说了说Join配合Late Materialization出现的一些问题。比如Hash Join的时候，对于进行Probe的那个表，他的position list是顺序的，而用来构建哈希表的那个表得到的position list则是乱序的。所以在tuple reconstruction的时候，对于乱序的position list会产生很多随机IO，导致性能问题。
+
+一个方法是通过两次重映射来把随机读取数据改成顺序读取，但是开销是两次Sort。
+
+更细化一点的，可以不需要全局有序，因为虽然随机IO比较慢，但是在block内还是比较快的，所以可以根据block排序，block按序读取，block内随机读取。这样可以节省一点排序的开销。
+
+另一种方案就是提前物化部分的列，比如这里需要随机IO的表，我们可以在build hash table的时候就直接把后续需要用到的column读上来，而不是只放hash value和tuple id。这样后续的probe阶段在匹配成功后可以直接把对应的column value取出来。
 
 ### Group-by, Aggregation and Arithmetic Operations
 
+* Group-by可以通过只物化需要的column来加速，一般的group by实现都是通过哈希表，这里的优化思路就和hash join中的哈希表相同了。
+* Aggregation，之前提到过可以通过压缩数据来做。比如distinct可以通过直接计算dictionary的大小来得到等。
+* Arithmetic operations，他的意思是可以通过提前物化需要的列来避免表达式树中间结果的生成，思路也类似于上面的Join优化了。这块我看的也比较迷惑，需要读读代码
+
 ### Inserts/updates/deletes
 
+列存数据库的更新难点主要在：
+
+* Row是分开的，每次写入都会涉及到多个位置的随机写。像C-Store这种存多个projection的，性能会更差一些
+* 数据有压缩，写入的时候处理会复杂一些
+
+所以一般的方法都是区分开ReadStore和WriteStore，然后读取的时候去做合并。
+
+实现WriteStore比较简单的方案是通过一些内存中的结构存储最近的变更（insert/delete/update）：
+
+* MonetDB就是使用了简单的column。对于每一个用户的column，他都有两个column来存储最近的insert/deletes
+* C-Store的Write optimized store使用了行格式存储近期写入的数据（这个我不太确定），然后读取的时候需要合并WOS和ROS的结果，处理起来会麻烦点
+* 一些额外的优化可以做，比如通过bitmap来存储tuple是否被删除，然后通过一些压缩技术来压缩这个bitmap（这个我也不是很确定现在主流的做法，还需要再去看看）
+* VectorWise提出了一个叫Positional Delta Trees(PDTs)的数据结构。大概思路就是里面存了Position相关的diff，而非通过sort key去索引，从而避免每次都读取sort key列。PDT这种differential data structure的好处就是提供快照比较简单，其思路类似OCC，新的事务写入可以先放到一个小的PDT中，最后在合并到共享的PDT中来提交写入。
+
 ### Indexing, Adaptive Indexing and Database Cracking
+
+列存数据库的索引大多是那种紧凑的数据结构。（与之对应的就是一些平衡树等复杂度有保障的数据结构，但是需要大量的指针跳转）比如bitmap等
+
+另一种索引则是概率数据结构（不清楚skeches是不是他们的统称，但貌似有个库是收集这些数据结构的），比如布隆过滤器，或者一些记录统计信息的结构，比如zonemap
+
+Database Cracking其实和Adaptive Indexing是一个意思，就是通过记录一些用户请求的统计信息，来自适应的调整数据/索引的结构。近期有很多相关的AI for DB的工作应该和这个有关，比如为用户请求建模，然后对于更新多的地方调整为行存，读取多的地方调整为列存，以及一些扫描比较少的地方可以不构建索引，减少空间开销等。
+
+> The main idea is that the system autonomously creates only the indexes it needs. Indexes are created (a) adaptively, i.e., only when needed, (b) partially, i.e., only the pieces of an index needed are created and (c) continuously, i.e., the system continuously adapts.
+
+### Summary
+
+最后贴一张总结，虽然我感觉他上面的Row-store/Column-store的划分没啥道理
+
+![](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20230625201218.png)
+
+> As it is evident by the plethora of those features, modern columnstores go beyond simply storing data one column-at-a-time; they provide a completely new database architecture and execution engine tailored for modern hardware and data analytics.
+
+
 
 
 
