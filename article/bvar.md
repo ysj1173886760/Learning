@@ -1,6 +1,6 @@
 # brpc-bvar
 
-这篇文章介绍一下bvar的实现
+这篇文章介绍一下bvar的实现，之前有写过一些brpc的文章放到了我的博客中，有同学感兴趣也可以去看看：http://heavensheep.xyz/?s=brpc
 
 有关bvar的实现和使用方法可以看这里：
 
@@ -150,11 +150,115 @@ Schedule就是将Sampler提交上去，然后`take_sample()`就会每秒调用�
 
 ReducerSampler中的核心结构就是一个`butil::BoundedQueue`，和普通队列的区别就是在push的时候，如果队列数量超过上限，就会truncate老的元素。
 
-每次调用`take_sample`的时候，Sampler会根据`InvOp`的类型进行操作，InvOp代表BinaryOp的逆操作，如果有逆操作的话，这里会简单记录当前Reducer的值，并存储到Queue中，否则的话则会通过Reset重置Reducer的数据，并将重置之前的数据存储到Queue中。
+每次调用`take_sample`的时候，Sampler会根据`InvOp`的类型进行操作，InvOp代表BinaryOp的逆操作，如果有逆操作的话，这里会简单记录当前Reducer的值，并存储到Queue中，否则的话则会通过`reset`重置Reducer的数据，并将重置之前的数据存储到Queue中。
 
 这里的逻辑是：如果有逆操作的话，可以通过逆操作来计算两次Sample的Diff。否则的话，就只能存储每个TimeWindow（1s）所聚合的值。比如前5s到前3s的Max，就只能通过聚合5到4秒和4到3秒这两次的聚合值来得到，而如果是取Sum，则可以简单用第3秒的sum减去第5s的sum来得到
 
+代码如下：
+
+```cpp
+Sample<T> latest;
+if (butil::is_same<InvOp, VoidOp>::value) {
+    latest.data = _reducer->reset();
+} else {
+    latest.data = _reducer->get_value();
+}
+latest.time_us = butil::gettimeofday_us();
+_q.elim_push(latest);
+```
+
+Sampler提供一个`get_value()`的方法，作用就是取出队列中至多`n`个元素，如果有InvOp的话，这里会直接通过InvOp计算第一个和最后一个采样结果的差值，否则的话则会通过BinaryOp将这n个元素聚合起来返回
+
+介绍完Sampler，Window上面也提到过，就是对Sampler的包装，Window的构造函数中需要给出Window聚合的粒度，以秒为单位。Window的`get_value`实际上就是直接调用Sampler的`get_value`，即聚合给定窗口内的数据。
+
+还有另一个和Window比较像的Wrapper，叫做PerSecond，他和Window的区别是，PerSecond在聚合完结果后，会用结果除以时间，从而得到每秒钟的变化量。举个例子：
+
+```cpp
+bvar::Adder<int> sum;
+bvar::PerSecond<bvar::Adder<int>> sum_per_second(&sum, 60);
+bvar::Window<bvar::Adder<int>> sum_minute(&sum, 64);
+```
+
+一个是统计60秒的总和，一个是统计60秒内，每秒钟的变化量
+
 ## bvar::PassiveStatus
 
+bvar提供一个叫Status的东西，主要作用就是`set_value`，用来统计一个恒定的值
+
+因为在某些情况下，我们不知道何时去执行`set_value`，所以bvar引入了PassiveStatus，会传入一个callback，只有在需要输出的时候，bvar才会通过callback计算需要输出的值。在下面的LatencyRecorder中会看到具体的应用
+
 ## bvar::LatencyRecorder
+
+LatencyRecorder应该是bvar最常用的一个结构了，他用来存储延迟，并提供qps/latency_avg/latency_p99等多个统计值
+
+为了统计p99等信息，LatencyRecorder需要一个结构来记录数据分布，这个也是在读LatencyRecorder之前所需要了解的最后一个结构，叫做Percentile
+
+Percentile中也包含一个combiner和一个sampler，其中Combiner就是之前看到的AgentCombiner，而Sampler也是之前看到的ReducerSampler，唯一有不同的就是Element的类型不同，这里的Element为PercentileSamples
+
+每个PercentileSamples包含32个PercentileInterval，每个PercentileInterval包含若干个Sample，每个Sample就是用户给的Latency，Sample的数量由PercentileInterval的模版类型所指定（减少动态内存分配次数）
+
+之所以每个PercentileSamples包含32个PercentileInterval，是因为LatencyRecorder里通过`uint32_t`来记录Latency，并且会根据`log(latency)`的值来计算桶的位置，所以就最多需要32个桶。
+
+写入逻辑如下：
+
+```cpp
+void operator()(GlobalValue<Percentile::combiner_type>& global_value,
+                ThreadLocalPercentileSamples& local_value) const {
+    int64_t latency = _latency;
+    const size_t index = get_interval_index(latency);
+    PercentileInterval<ThreadLocalPercentileSamples::SAMPLE_SIZE>&
+        interval = local_value.get_interval_at(index);
+    if (interval.full()) {
+        GlobalPercentileSamples* g = global_value.lock();
+        g->get_interval_at(index).merge(interval);
+        g->_num_added += interval.added_count();
+        global_value.unlock();
+        local_value._num_added -= interval.added_count();
+        interval.clear();
+    }
+    interval.add64(latency);
+    ++local_value._num_added;
+}
+```
+
+即先根据latency计算出桶的位置，也就是定位具体的Interval，如果该Interval已经满了（因为不会涉及动态内存分配，所以Interval是定长的），就会将该Interval中的采样信息合并到全局的采样数据中，然后将本次数据加入到interval中。
+
+这里在将局部数据Merge到全局数据的时候，如果全局数据的空间也不足了，会保证老数据的数量一定是会变少的，即用新的数据来替换旧的数据，否则相当于只是将新数据采样加入进来，这样老数据会被一直保留。
+
+然后另一个值的关注的函数就是`get_number`了，他的作用是get_pxx，比如获取p50，p99等。因为我们已经有Latency的统计数据了，这里就是计算一下我们需要获得第几个latency作为结果输出。之前看到的`_num_added`等信息也是在这个地方用到的。
+
+其实我个人直观感觉用`_num_sampled`也不是不行，不过这块我也不太懂
+
+最后计算出是第几个Interval的第几个Sample，然后通过`interval.get_sample_at(index)`读取数据，里面会判断一下，如果数据是unsorted，就会先进行一下sort再读取。
+
+这里的sorted其实也只是一个大概的样子，因为在记录latency的时候，并不会维护这个`_sorted`量，`merge`的时候也不会。只有在clear interval，即从局部merge到全局的时候才会清空一下。
+
+Percentile结束后，看LatencyRecorder就比较容易了，核心就是三个计数器，以及对应的三个Window：
+
+```cpp
+class LatencyRecorderBase {
+public:
+    explicit LatencyRecorderBase(time_t window_size);
+protected:
+    IntRecorder _latency;
+    Maxer<int64_t> _max_latency;
+    Percentile _latency_percentile;
+  
+    RecorderWindow _latency_window;
+    MaxWindow _max_latency_window;
+    PercentileWindow _latency_percentile_window;
+}
+```
+
+其中IntRecorder的作用是统计qps和平均值，因为IntRecorder中记录了sum和num
+
+MaxWindow则是统计窗口内延迟最大值
+
+PercentileWindow则是用来统计p99等信息的，这里还有一些PassiveStatus用来打印出默认的一些统计值
+
+嗯LatencyRecorder差不多就这些
+
+本来还想画个图梳理一下，但是实际上这么看bvar还是比较清晰的，每个bvar就是一个combiner一个sampler，然后不同bvar有不同类型的数据和聚合方式。
+
+这篇文章没有提到一个叫做SeriesSampler的东西，在阅读代码的时候可能会常看到，他的作用是统计过去30天的数据，实现也比较简单，因为我用的不多这里就不说了。
 
