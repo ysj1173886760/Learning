@@ -4,6 +4,8 @@
 
 这篇文章简略介绍一下Innodb中的一些组件，以及一些实现的优化。后续会针对不同的模块做细致的分析。之所以要先做一个简略的介绍，是因为Innodb本身的代码结构层次划分的并不是很清晰，无法层层递进式的去分析，个人在阅读源码的时候流程也是这样，先有一个大概的思路，再去扣细节。所以先有一个简略的介绍，每个模块的作用都是什么，也可以让读者在后续文章的阅读中有更多的背景，也省略了后续文章中需要介绍相关模块背景的时间。
 
+可能叫Introduction不是很妥，因为并没有很全面的介绍，这篇文章我们主要关注前台的读写链路。
+
 > `InnoDB` is a general-purpose storage engine that balances high reliability and high performance. In MySQL 8.0, `InnoDB` is the default MySQL storage engine. Unless you have configured a different default storage engine, issuing a [`CREATE TABLE`](https://dev.mysql.com/doc/refman/8.0/en/create-table.html) statement without an `ENGINE` clause creates an `InnoDB` table.
 >
 > Key Advantages of Innodb
@@ -19,7 +21,7 @@
 
 从上面的架构图中，已经可以看到一些组件的影子，如Change Buffer，Adaptive Hash Index，Undo TableSpace等。在图上没画到的我们比较关注的还有数据的组织形式（这里只关注Btree，忽略Full-text search index和Geospatial index），并发控制相关的一些组件，如Lock Manager，元数据的存储Data Dictionary等。
 
-下面简单介绍一下Innodb中的这些组件，看一下他们的作用，和其他组件的联动，以及他们的大概流程。我们主要关注前台的读写流程。
+下面简单介绍一下Innodb中的这些组件，看一下他们的作用，和其他组件的联动，以及他们的大概流程。
 
 ## Interface
 
