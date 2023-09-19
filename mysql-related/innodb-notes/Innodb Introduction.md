@@ -19,7 +19,7 @@
 
 大体的架构我更推荐直接去看MySQL的[官方文档](https://dev.mysql.com/doc/refman/8.0/en/innodb-storage-engine.html)
 
-从上面的架构图中，已经可以看到一些组件的影子，如Change Buffer，Adaptive Hash Index，Undo TableSpace等。在图上没画到的我们比较关注的还有数据的组织形式（这里只关注Btree，忽略Full-text search index和Geospatial index），并发控制相关的一些组件，如Lock Manager，元数据的存储Data Dictionary等。
+从上面的架构图中，已经可以看到一些组件，如Change Buffer，Adaptive Hash Index，Undo TableSpace等。在图上没画到的我们比较关注的还有数据的组织形式（这里只关注Btree，忽略Full-text search index和Geospatial index），并发控制相关的一些组件，如Lock Manager，元数据的存储Data Dictionary等。
 
 下面简单介绍一下Innodb中的这些组件，看一下他们的作用，和其他组件的联动，以及他们的大概流程。
 
