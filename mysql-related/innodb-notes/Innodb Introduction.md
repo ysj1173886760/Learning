@@ -271,6 +271,15 @@ SMO的流程为：
 
 
 
+有关Btree cursor的移动：
+
+* 因为Latch order是从左到右的，所以获取下一个页比较容易，直接Latch住下一个Page即可
+* 对于逆序扫描的情况，Innodb有两种方式：
+  * 会先尝试乐观策略，这里会先Latch当前Page，读取前一个Page的PageID，释放当前Page的Latch，Latch住前一个Page，然后乐观读取当前Page，判断Modify clock没有改变，并且记录的Prev page不变，则认为移动成功。
+  * 乐观策略失败的时候，走悲观策略，从Btree根节点重新下降，搜索小于上一个读取的record的位置。
+
+
+
 最后简单讲一下Innodb MVCC是怎么做的：
 
 * 因为数据随时会被并发的事务修改，所以MVCC的核心在于如何获取一个Snapshot，使得后续在读取这个Snapshot的时候，数据是不变的。Innodb会为每个事务都赋予一个TxnID（trx id），用来唯一的标识一个事务，是全局单调递增的。因为读取的数据会受到并发事务的影响，那么我们只要保证所有并发的事务的变更都读不到即可
