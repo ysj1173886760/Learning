@@ -19,7 +19,7 @@
 
 从上面的架构图中，已经可以看到一些组件的影子，如Change Buffer，Adaptive Hash Index，Undo TableSpace等。在图上没画到的我们比较关注的还有数据的组织形式（这里只关注Btree，忽略Full-text search index和Geospatial index），并发控制相关的一些组件，如Lock Manager，元数据的存储Data Dictionary等。
 
-下面简单介绍一下Innodb中的这些组件，看一下他们的作用，和其他组件的联动，以及他们的大概流程。
+下面简单介绍一下Innodb中的这些组件，看一下他们的作用，和其他组件的联动，以及他们的大概流程。我们主要关注前台的读写流程。
 
 ## Interface
 
@@ -245,8 +245,47 @@ SMO的流程为：
 
 ## 读取
 
+读取核心的入口就是`index_read`和`general_fetch`，具体的逻辑主要在`row_search_mvcc`中，通过`index_read`进行第一次定位，然后通过`general_fetch`进行cursor的移动。
 
+* 这里会根据当前的读模式进行上锁，比如对表上IS/IX锁。或者是通过MVCC读，则获取read view
+* 定位Btree的cursor，这里有三种情况。如果是一次cursor的移动，会走恢复cursor的流程。如果是一次带有Search tuple的定位，会从Btree中搜索这个search tuple。如果没有search tuple，则是会将指针定位到Btree的一端边界处。
+* 定位到cursor之后，开始根据匹配条件定位到第一个符合条件的row，比如EXACT匹配模式，会比较search tuple和cursor指向的数据，还有EXACT_PREFIX做前缀匹配。
+* 上锁。比如我们可能需要上一些next key lock来防止Phantom Read
+* ICP(Index condition pushdown) check，检查下推下来谓词是否满足，可以减少MySQL Server与Innodb层的交互，以及回表的次数。如果Index condition不满足，则获取下一行数据，当前数据的处理流程就结束了。如果满足条件，则会开始判断可见性。
+* 根据二级索引中记录的主键去聚簇索引中读取一个当前事务可见的老版本。
+* 最后做一些预读，以及将Innodb的格式转化成MySQL的行格式，并返回给上层。
+
+![](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20230919094136.png)
+
+
+
+这里涉及到的优化点有几个：
+
+* record buffer，对于一些连续扫描的case，Innodb会提前将一些数据存到record buffer中。这样后续再次读取的时候可以直接将数据返回给Server层，不需要再去做Btree的读取/上锁等操作。
+* 虽然有record buffer，但是每次读取完如果都需要从Btree的root节点下降到Leaf，还是会有性能的损耗，Innodb希望可以减少Btree下降的次数。
+  * Innodb引入了一种cursor叫做persistent cursor，这里的persistent不是指cursor会被持久化的磁盘上，而是在多次MySQL Server与Innodb的交互中是持续存在的。大概机制为，读取数据完成后，通过pcur保存当前扫描到的位置，包括Page内的offset，Page Block等。然后在下一次读取的时候，会尝试直接读取上次保存的内存地址，判断modify clock是否发生变化，如果没变，说明Page还是之前的page，可以继续读取。如果变了，则fallback到悲观的restore，从Btree上重新下降。
+
+* 因为回表本身的开销比较大，需要做Btree下降 + 读Undo，所以Innodb会在扫描二级索引时先进行Index condition的检查，而非先回表判断可见性，从而减少回表的次数
+
+
+
+最后简单讲一下Innodb MVCC是怎么做的：
+
+* 因为数据随时会被并发的事务修改，所以MVCC的核心在于如何获取一个Snapshot，使得后续在读取这个Snapshot的时候，数据是不变的。Innodb会为每个事务都赋予一个TxnID（trx id），用来唯一的标识一个事务，是全局单调递增的。因为读取的数据会受到并发事务的影响，那么我们只要保证所有并发的事务的变更都读不到即可
+
+![](https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20230919102101.png)
+
+* 上面图中的ReadView就代表了一个Snapshot，他的含义是，所有TxnID小于3的事务都已经结束了，所有TxnID大于7的事务还未开始，在这之间的3，5，7这三个事务是活跃的，也就是不可见的。
+
+* 所以在对某一个版本的数据判断可见性的时候，判断这个版本的创建者对当前ReadView是否可见即可。如上图中，会先判断Version 1的事务Txn 3是否活跃，这里会发现Txn 3是活跃事务，则会认为Version 1不可见，然后读取Version 0，发现Txn 1不活跃，则Version 0可见。
 
 ## Reference
 
-https://zhuanlan.zhihu.com/p/164705538
+MySQL官方文档
+
+[InnoDB：B-tree index（2）](https://zhuanlan.zhihu.com/p/164705538)
+
+[InnoDB：B-tree index（1）](https://zhuanlan.zhihu.com/p/164728032)
+
+[Innodb 中的 Btree 实现 (二) · select 篇](http://mysql.taobao.org/monthly/2023/07/03/)
+
