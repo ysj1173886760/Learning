@@ -42,7 +42,60 @@ Innodb中有一种Page叫做Rollback Segment Header，简称为Rseg，其中需�
 
 注意Undo Log的作用是回滚用户的操作，以及保存旧版本，所以每次Undo Log的产生一定对应了用户的某次操作。之前介绍过，用户的操作主要是Insert，Update，Delete，对应到Btree上就是Insert，Update，Delete mark。
 
-Innodb的Undo是在写入聚簇索引（主表）之前写入的，写入的信息需要能够Undo主索引以及二级索引。
+Innodb的Undo是在写入聚簇索引（主表）之前写入的，写入的信息需要能够Undo主索引以及二级索引上的变更。
+
+Undo Log的类型主要有4种：
+
+* TRX_UNDO_INSERT_REC，对应插入一条数据。
+* TRX_UNDO_UPD_EXIST_REC，更新一个没有被del mark标记的record，对应的是原地更新
+* TRX_UNDO_UPD_DEL_REC，更新一个被del mark标记的record，比如insert_by_modify的时候会用
+* TRX_UNDO_DEL_MARK_REC，给一个record标记del mark，对应的是删除一个record
+
+<img src="https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20231002102120.png" style="zoom:50%;" />
+
+先看TRX_UNDO_INSERT_REC类型：
+
+* start of record和end of record的作用和双向链表相同，可以通过这两个字段快速定位到下一条undo log或者上一条undo log。start of  record记录的时候本条undo log开始的地址，end of record记录的是本条undo log结束，也就是下一条undo log开始的地址
+* undo type为TRX_UNDO_INSERT_REC
+* undo no表示的是这是当前事务第几条undo log，从0开始
+* table id是对应的表。因为undo log是表级别的，我们需要能够找到对应的表去undo
+* list of <len, value>则是本次插入数据的主键，通过长度+值的格式来存储。
+  * 你可能想问，为什么一次插入操作的Undo不把所有的数据都记录下来呢？在Undo作为旧版本的时候，Insert的旧版本就是空，所以实际上不需要任何数据。
+  * 那下一个问题是，既然不需要任何数据，为什么还要记录主键呢。这是因为Undo的作用还有回滚操作，Innodb需要能够通过Undo中记录的信息从表中回滚操作，对于Insert来说回滚操作就是把插入的数据删除掉，删除掉这个数据只需要通过主键定位到他即可，不需要其他的列。
+  * 那么你可能又会问，二级索引还有二级索引项呢，为什么不需要记录索引项的数据？这个和Innodb的写入以及Undo的顺序有关，等下在写入流程中会提到。
+
+<img src="https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20231002105405.png" style="zoom:50%;" />
+
+然后是TRX_UNDO_DEL_MARK_REC，删除一个record对应的Undo：
+
+* Headers上面已经讲过，包含end of record, undo type, undo no, table id
+* old trx id/old rollback ptr会记录前一个版本的txn id，以及rollback ptr，用来回溯到老版本
+* <len, value> list of pk就是本次删除数据的主键
+* index info len和<len, value> list of index共同记录了索引列相关的信息，这里是旧值的索引列
+  * 这里可能你又有一个疑问，del mark应该只是标记一个record的上flag，不需要修改任何column，为什么还需要记录索引列到undo中呢？因为我们完全可以通过聚簇索引上的数据得到所有的索引列。
+  * 对于undo来说，是这样。因为不会有并发的事务修改相同的主键，那么我们完全可以通过主键定位到数据，然后去undo二级索引。
+  * 但是undo在作为旧版本的时候，还需要做真删，即不能简单的del mark了一个record就完事了，还需要在合适的时候将这个数据真正的删除掉，从而释放空间。但是由于有insert by modify这种操作，一个del mark的数据仍然可能被修改，这样之前删除他的事务就无法通过这个tombstone定位到索引列的信息了，那么undo就必须记录索引列的信息，才能对二级索引的数据做到“真删”
+
+<img src="https://picsheep.oss-cn-beijing.aliyuncs.com/pic/20231002112514.png" style="zoom:50%;" />
+
+最后是TRX_UNDO_UPD_EXIST_REC，对应了原地更新的undo：
+
+* Headers，old trx id & old rollback ptr还是一样的
+* pk和上面也一样，因为总是要定位是那一行被修改了
+* n_updated和update list组成了update vector，记录了本次修改的那些数据在更新前的值。我们可以通过这两项构建出来一个“逆向”的update vector，从而将数据从新版本更新称老版本
+* index info len和index list和上面也一样，如果本次修改变更了索引项，就会记录在这里，用来在合适的时机对索引列做真删。
+* TRX_UNDO_UPD_EXIST_REC和TRX_UNDO_UPD_DEL_REC的格式是一样的，都是通过update vector记录老版本。只不过UPD_DEL_REC不会记录索引项（因为不需要做真删），并且对UPD_DEL_REC类型的操作做undo不是做update，而是delete。
+  * 在这里敏锐一点的同学可能会发现，因为TRX_UNDO_UPD_DEL_REC实际上就是Insert操作，那为什么Insert undo只记录了pk，而这里的Update del rec却额外记录了update vector呢。这里记录的数据实际上是del mark的前一个版本的数据。具体的逻辑我们会在写入的时候看到
+
+## Undo 写入
+
+## Undo 多版本
+
+## Purge
+
+## Truncate
+
+
 
 ## Reference
 
